@@ -1,8 +1,9 @@
 # In General
 * finish adding in settings options
+* fix links not appearing properly in richtexts
 * finish adding in links to richtexts
 * **make modular**
-* frame dragging
+* ~~frame dragging~~
 
 # Global Chat
 * add in emoji picker, etc
