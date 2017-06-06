@@ -4,6 +4,7 @@
 * finish adding in links to richtexts
 * **make modular**
 * ~~frame dragging~~
+* not replace chat.addtext maybe... maybe
 
 # Global Chat
 * add in emoji picker, etc
