@@ -1,10 +1,10 @@
 # In General
 * finish adding in settings options
 * ~~fix links not appearing properly in richtexts~~ it was the c func reading `//` as a comment; fixed
-* finish adding in links to richtexts
+* ~~finish adding in links to richtexts~~
 * **make modular**
 * ~~frame dragging~~
-* not replace chat.addtext maybe... maybe
+* ~~not replace chat.addtext maybe... maybe~~ make a appendinto function
 * add in ctrl+backspace support into TextEntry's
 
 # Global Chat
