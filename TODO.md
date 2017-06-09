@@ -1,6 +1,6 @@
 # In General
 * finish adding in settings options
-* fix links not appearing properly in richtexts
+* ~~fix links not appearing properly in richtexts~~ it was the c func reading `//` as a comment; fixed
 * finish adding in links to richtexts
 * **make modular**
 * ~~frame dragging~~
