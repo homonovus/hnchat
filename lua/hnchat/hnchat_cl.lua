@@ -1,4 +1,4 @@
---if hnchat then hnchat.closeChatbox() hnchat.derma.Frame:Remove() end
+if hnchat then hnchat.UnLoad() end
 
 hook.Add( "Initialize", "hnchat", function()
 	hook.Remove( "Initialize", "hnchat" )
@@ -91,17 +91,11 @@ hook.Add( "Initialize", "hnchat", function()
 						self:InsertColorChange( 46, 231, 46, 255)
 					end]]
 
-					if obj:find("https?://[^%s%\"]+") then
-						local url = obj:match( "https?://[^%s%\"]+" )
-						local s, e = obj:find( url )
+					local url = obj:match("https?://[^%s%\"]+")
+					local s,e = obj:find("https?://[^%s%\"]+")
 
-						self:InsertClickableTextStart("ClickLink")
-						self:AppendText(obj)
-						self:AppendText(" !!!!!!!!!!!!!!linked")
-					else
-						self:AppendText(obj)
-					end
-
+					if url then self:InsertClickableTextStart(url) end
+					self:AppendText(obj)
 					self:InsertClickableTextEnd()
 				elseif obj:IsPlayer() then
 					--local mark = markup.Parse(obj:Nick())
@@ -117,6 +111,12 @@ hook.Add( "Initialize", "hnchat", function()
 			end
 		end
 		hnchat.derma.dms.tabs.tabs[sid].Player = ply
+		hnchat.derma.dms.tabs.tabs[sid].oldThink = hnchat.derma.dms.tabs.tabs[sid].Think
+		hnchat.derma.dms.tabs.tabs[sid].Think = function(self)
+			if self:IsVisible() then
+				self.unread = false
+			end
+		end
 
 		local t = hnchat.derma.dms.tabs:AddSheet( ply:UndecorateNick(), hnchat.derma.dms.tabs.tabs[sid], nil, false, false, ply:UndecorateNick() )
 		t.Tab.DoRightClick = function(self)
@@ -143,6 +143,10 @@ hook.Add( "Initialize", "hnchat", function()
 
 			if self:IsDown() then
 				textcol = color_white
+			end
+			
+			if hnchat.derma.dms.tabs.tabs[sid].unread then
+				col = Color(math.Clamp(math.abs(math.sin(RealTime()*5)*255),225	,255),228,232)
 			end
 
 			surface.SetDrawColor(col)
@@ -219,7 +223,7 @@ hook.Add( "Initialize", "hnchat", function()
 		table.insert( meme, " )" )
 
 		chat.AddText( unpack(meme) )
-		chat.AddText( Color(24,161,35), "(Local) ", LocalPlayer(), Color(255,255,255), ": " .. txt )
+		chat.AddText( Color(24,161,35), "(Local) ", LocalPlayer(), color_white, ": " .. txt )
 	end
 	function dmPlayer(ply, txt)
 		if util.NetworkStringToID("hnchat_dm_send") == 0 then return end
@@ -262,7 +266,6 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.Frame:SetDraggable(true)
 		hnchat.derma.Frame:SetSizable(true)
 		hnchat.derma.Frame:ShowCloseButton(false)
-		hnchat.derma.Frame:MakePopup()
 		hnchat.derma.Frame:SetScreenLock(true)
 		hnchat.derma.Frame:SetMinimumSize( 200, 100 )
 		hnchat.derma.Frame.Paint = function( self, w, h )
@@ -324,6 +327,7 @@ hook.Add( "Initialize", "hnchat", function()
 	hnchat.derma.configpanel = vgui.Create("DPanel")
 	hnchat.derma.chatpanel.Paint = function() return false end
 	hnchat.derma.dmpanel.Paint = function() return false end
+	hnchat.derma.luapanel.Paint = function() return false end
 
 	hnchat.derma.chat = hnchat.derma.chat or {}
 		hnchat.derma.chat.RichText = vgui.Create( "RichText", hnchat.derma.chatpanel )
@@ -337,10 +341,7 @@ hook.Add( "Initialize", "hnchat", function()
 		end
 		hnchat.derma.chat.RichText.ActionSignal = function( self, signalName, signalValue )
 			if ( signalName == "TextClicked" ) then
-				if ( signalValue == "OpenWiki" ) then
-					--gui.OpenURL( "http://wiki.garrysmod.com/page/Category:RichText" )
-					print('clciked link')
-				end
+					gui.OpenURL(signalValue)
 			end
 		end
 
@@ -369,17 +370,17 @@ hook.Add( "Initialize", "hnchat", function()
 				self:SetText("")
 				if str ~= "" then
 					if hnchat.derma.chat.msgmode.curtype == 0 then
-						Say( str, false )
+						Say( "\""..str.."\"", false )
 					elseif hnchat.derma.chat.msgmode.curtype == 1 then
-						Say( str, true )
+						Say( "\""..str.."\"", true )
 					elseif hnchat.derma.chat.msgmode.curtype == 2 then
-						SayLocal( str )
+						SayLocal(str)
 					elseif hnchat.derma.chat.msgmode.curtype == 3 then
-						RunConsoleCommand( "saysound", str)
+						RunConsoleCommand( "saysound", str )
 					elseif hnchat.derma.chat.msgmode.curtype == 4 then
-						LocalPlayer():ConCommand( str )
+						LocalPlayer():ConCommand("\""..str.."\"")
 					else
-						Say( str, false )
+						Say( "\""..str.."\"", false )
 					end
 				end
 
@@ -563,7 +564,7 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.dms.TextEntry:SetSize(w,14)
 		hnchat.derma.dms.TextEntry.OldThink = hnchat.derma.dms.TextEntry.Think
 		hnchat.derma.dms.TextEntry.Paint = function( self, w ,h )
-			local col = self.HistoryPos == 0 and Color( 255, 255, 255, 255 ) or Color( 241, 201, 151, 255 )
+			local col = self.HistoryPos == 0 and color_white or Color( 241, 201, 151, 255 )
 			draw.RoundedBox( 0, 0, 0, w, h, col )
 			self:DrawTextEntryText( Color( 0, 0, 0, 255 ), Color( 24, 131, 255, 255 ), Color( 0, 0, 0, 255 ))
 			return false
@@ -576,7 +577,7 @@ hook.Add( "Initialize", "hnchat", function()
 				self:SetText("")
 				--hnchat.closeChatbox()
 				if str ~= "" and hnchat.derma.dms.tabs:GetActiveTab() ~= nil then
-					hnchat.derma.dms.tabs:GetActiveTab():GetPanel().AddText( LocalPlayer(), Color(255,255,255), ": ", str )
+					hnchat.derma.dms.tabs:GetActiveTab():GetPanel().AddText( LocalPlayer(), color_white, ": ", str )
 					dmPlayer( hnchat.derma.dms.tabs:GetActiveTab():GetPanel().Player, str )
 				end
 
@@ -676,6 +677,7 @@ hook.Add( "Initialize", "hnchat", function()
 		local ezdraw = function(self,w,h)
 			col = self:IsHovered() and Color(222,222,222) or Color(234,234,234)
 			textcol = self:IsHovered() and Color(96,42,180) or Color(81,81,81)
+			textcol = self:IsDown() and color_white or textcol
 
 			draw.RoundedBox( 0, 0, 0, w, h, col)
 			draw.SimpleText( self:GetText(), "DermaDefault", w/2, h/2, textcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
@@ -748,7 +750,7 @@ hook.Add( "Initialize", "hnchat", function()
 			menu:Open()
 		end
 		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.menu)
-		
+
 		local spacer = vgui.Create("DPanel", hnchat.derma.lua.topbar)
 			spacer:SetSize(32,24)
 			spacer:Dock(LEFT)
@@ -763,6 +765,7 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.lua.topbar.run.Paint = function(self, w, h)
 			col = self:IsHovered() and Color(222,222,222) or Color(190,243,188)
 			textcol = self:IsHovered() and Color(96,42,180) or Color(81,81,81)
+			textcol = self:IsDown() and color_white or textcol
 
 			draw.RoundedBox( 0, 0, 0, w, h, col)
 			draw.SimpleText( self:GetText(), "DermaDefault", w/2, h/2, textcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
@@ -800,7 +803,7 @@ hook.Add( "Initialize", "hnchat", function()
 		local spacer = vgui.Create("DPanel", hnchat.derma.lua.topbar)
 			spacer:SetSize(16,24)
 			spacer:Dock(LEFT)
-			spacer.Paint = function(self) return false end
+			spacer.Paint = function() return false end
 			hnchat.derma.lua.topbar:AddPanel(spacer)
 
 		hnchat.derma.lua.topbar.player = vgui.Create( "DButton", hnchat.derma.lua.topbar )
@@ -830,7 +833,7 @@ hook.Add( "Initialize", "hnchat", function()
 		local spacer = vgui.Create("DPanel", hnchat.derma.lua.topbar)
 			spacer:SetSize(16,24)
 			spacer:Dock(LEFT)
-			spacer.Paint = function(self) return false end
+			spacer.Paint = function() return false end
 			hnchat.derma.lua.topbar:AddPanel(spacer)
 
 		hnchat.derma.lua.topbar.servers = vgui.Create( "DButton", hnchat.derma.lua.topbar )
@@ -877,7 +880,7 @@ hook.Add( "Initialize", "hnchat", function()
 		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
 			spacer:SetSize(74,8)
 			spacer:Dock(TOP)
-			spacer.Paint = function(self) return false end
+			spacer.Paint = function() return false end
 
 		hnchat.derma.lua.leftbar.loadurl = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
 		hnchat.derma.lua.leftbar.loadurl:SetText("Load URL")
@@ -897,7 +900,7 @@ hook.Add( "Initialize", "hnchat", function()
 		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
 			spacer:SetSize(74,8)
 			spacer:Dock(TOP)
-			spacer.Paint = function(self) return false end
+			spacer.Paint = function() return false end
 
 		hnchat.derma.lua.leftbar.pastebin = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
 		hnchat.derma.lua.leftbar.pastebin:SetText("pastebin")
@@ -920,7 +923,7 @@ hook.Add( "Initialize", "hnchat", function()
 		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
 			spacer:SetSize(74,8)
 			spacer:Dock(TOP)
-			spacer.Paint = function(self) return false end
+			spacer.Paint = function() return false end
 
 		hnchat.derma.lua.leftbar.beauty = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
 		hnchat.derma.lua.leftbar.beauty:SetText("Beautify")
@@ -931,19 +934,25 @@ hook.Add( "Initialize", "hnchat", function()
 		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
 			spacer:SetSize(74,8)
 			spacer:Dock(TOP)
-			spacer.Paint = function(self) return false end
+			spacer.Paint = function() return false end
 
 		-- send as shit here
 
 		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
 			spacer:SetSize(74,8)
 			spacer:Dock(TOP)
-			spacer.Paint = function(self) return false end
+			spacer.Paint = function() return false end
 
 		-- easy lua combo box here
 
 		hnchat.derma.lua.prop = vgui.Create( "DPropertySheet", hnchat.derma.luapanel )
 		hnchat.derma.lua.prop:Dock(FILL)
+		hnchat.derma.lua.prop.Paint = function() return false end
+
+		-- propertysheet (done)
+		-- drag base (might be built into property sheet's tabs)
+		-- then tabs
+
 		--[[hnchat.derma.lua.html = vgui.Create( "DHTML", hnchat.derma.luapanel )
 		hnchat.derma.lua.html:Dock(FILL)
 		hnchat.derma.lua.html:OpenURL("http://metastruct.github.io/lua_editor/")
@@ -957,7 +966,7 @@ hook.Add( "Initialize", "hnchat", function()
 			[LEDITOR] OnSelection -> function () { [native code] }
 			[LEDITOR] oncontextmenu -> function () { [native code] }
 			[LEDITOR] onmousedown -> function () { [native code] }
-			
+
 			 function PANEL:GetCode( sessionName )
 			 	return self:GetHasLoaded() and self:GetSession( sessionName ) or ""
 			 end
@@ -1152,17 +1161,11 @@ hook.Add( "Initialize", "hnchat", function()
 					hnchat.derma.chat.RichText:InsertColorChange( 46, 231, 46, 255)
 				end]]
 
-				if obj:find("https?://[^%s%\"]+") then
-					local url = obj:match( "https?://[^%s%\"]+" )
-					local s, e = obj:find( url )
+				local url = obj:match("https?://[^%s%\"]+")
+				local s,e = obj:find("https?://[^%s%\"]+")
 
-					hnchat.derma.chat.RichText:InsertClickableTextStart("ClickLink")
-					hnchat.derma.chat.RichText:AppendText(obj)
-					hnchat.derma.chat.RichText:AppendText(" !!!!!!!!!!!!!!linked")
-				else
-					hnchat.derma.chat.RichText:AppendText(obj)
-				end
-
+				if url then hnchat.derma.chat.RichText:InsertClickableTextStart(url) end
+				hnchat.derma.chat.RichText:AppendText(obj)
 				hnchat.derma.chat.RichText:InsertClickableTextEnd()
 			elseif obj:IsPlayer() then
 				--local mark = markup.Parse(obj:Nick())
@@ -1182,7 +1185,7 @@ hook.Add( "Initialize", "hnchat", function()
 		local ply = net.ReadEntity()
 		local txt = net.ReadString()
 
-		chat.AddText( Color(24,161,35), "(Local) ", ply, Color(255,255,255), ": " .. txt )
+		chat.AddText( Color(24,161,35), "(Local) ", ply, color_white, ": " .. txt )
 	end)
 
 	net.Receive("hnchat_dm_receive", function(len)
@@ -1191,13 +1194,14 @@ hook.Add( "Initialize", "hnchat", function()
 
 		if not hnchat.derma.dms.tabs.tabs[ply:SteamID()] then hnchat.addDM(ply) end
 
-		hnchat.derma.dms.tabs.tabs[ply:SteamID()].AddText( ply, Color(255,255,255), ": " .. txt )
-		if not hnchat.derma.dms.tabs:GetActiveTab():GetPanel():IsVisible() then
+		hnchat.derma.dms.tabs.tabs[ply:SteamID()].AddText( ply, color_white, ": " .. txt )
+		--if not hnchat.derma.dms.tabs:GetActiveTab():GetPanel():IsVisible() then
+			hnchat.derma.dms.tabs.tabs[ply:SteamID()].unread = true
 			surface.PlaySound("friends/message.wav")
-		end
+			chat.AddText("New DM from", ply)
+		--end
 
-		if not system.IsWindows() then return end
-		if system.IsWindowed() then system.FlashWindow() end
+		if system.IsWindows() and not system.HasFocus() then system.FlashWindow() end
 	end)
 
 	hook.Add( "PlayerBindPress", "hnchat", function( ply, bind, pressed )
@@ -1243,6 +1247,30 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.chat.msgmode.curtype = 1
 	end)
 
-	--hnchat.closeChatbox()
-	hnchat.derma.Frame:SetVisible(false)
+	function hnchat.UnLoad()
+		-- restore original functions
+		chat.AddText = oldChatAddText
+		chat.GetChatBoxPos = oldPos
+		chat.GetChatBoxSize = oldSize
+		chat.Open = oldOpen
+		chat.Close = oldClose
+		Say = oldSay
+
+		-- set old functions to nil for whatever reason because im paranoid
+		oldChatAddText = nil
+		oldPos = nil
+		oldSize = nil
+		oldOpen = nil
+		oldClose = nil
+		oldSay = nil
+
+		-- unhook
+		hook.Remove( "ChatText", "hnchat" )
+		hook.Remove( "PlayerBindPress", "hnchat" )
+		hook.Remove( "OnPlayerChat", "hnchat" )
+
+		hnchat = nil
+	end
+
+	hnchat.closeChatbox()
 end)
