@@ -10,6 +10,7 @@
 # Global Chat
 * add in emoji picker, etc
 * continue working
+* add red color to chat mode button thing
 
 # DM Chat
 * ADD IN GROUP DMS. rewrite the net funcs to change recipients to a table
