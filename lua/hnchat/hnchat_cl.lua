@@ -51,6 +51,7 @@ hook.Add( "Initialize", "hnchat", function()
 
 		hnchat.derma.tabs:SwitchToName(mode)
 
+		gamemode.Call("StartChat")
 		gamemode.Call( "ChatTextChanged", "" )
 	end
 	function hnchat.addDM(ply)
@@ -228,6 +229,8 @@ hook.Add( "Initialize", "hnchat", function()
 	function dmPlayer(ply, txt)
 		if util.NetworkStringToID("hnchat_dm_send") == 0 then return end
 
+		chat.AddText(Color(200,100,100), "[ ", color_white, "PM to ", ply, Color(200,100,100), " ]", LocalPlayer(), color_white, ": ", txt)
+
 		net.Start( "hnchat_dm_send", false )
 			net.WriteEntity(ply)
 			net.WriteString(txt)
@@ -294,7 +297,7 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.Frame:SetPos(x,y)
 		hnchat.derma.Frame:SetSize(w,h)
 
-		--chatgui = hnchat.derma.Frame -- chatsounds
+		chatgui = hnchat.derma.Frame -- chatsounds
 
 	hnchat.derma.tabs = vgui.Create( "DPropertySheet", hnchat.derma.Frame )
 	hnchat.derma.tabs:SetFadeTime(0)
@@ -1117,68 +1120,66 @@ hook.Add( "Initialize", "hnchat", function()
 	end
 	hnchat.derma.FSButton.DoClick = hnchat.tofull
 
+	hnchat.AddText = function( self, ... )
+		local tab = {...}
+		self:AppendText("\n")
 
-	oldPos = oldPos or chat.GetChatBoxPos
-	function chat.GetChatBoxPos()
-		return hnchat.derma.Frame:GetPos()
-	end
-	oldSize = oldSize or chat.GetChatBoxSize
-	function chat.GetChatBoxSize()
-		return hnchat.derma.Frame:GetSize()
-	end
-	oldOpen = oldOpen or chat.Open
-	function chat.Open(mode)
-		hnchat.openChatbox("Global")
-		hnchat.derma.chat.TextEntry:RequestFocus()
-	end
-	oldClose = oldClose or chat.Close
-	function chat.Close()
-		hnchat.closeChatbox()
+		if hnchat.settings.chat.time_stamps.convar:GetBool() then
+			self:InsertColorChange( 119, 171, 218, 255 )
+			self:AppendText( hnchat.settings.chat.time_24h.convar:GetBool() and (os.date("%H:%M", os.time())) or (os.date("%I:%M %p", os.time())) )
+
+			self:InsertColorChange( 255, 255, 255, 255 )
+			self:AppendText(" - ")
+		end
+
+		if #tab == 1 and isstring(tab[1]) then
+			self:AppendText(quick_parse(tab[1]))
+			self:AppendText("\n")
+
+			return
+		end
+
+		for k, v in next, tab do
+			if IsColor(v) or istable(v) then
+				self:InsertColorChange(v.r, v.g, v.b, 255)
+			elseif type(v) == "string"  then
+				--[[if (v:find(LocalPlayer():Nick()) or v:find(LocalPlayer():UndecorateNick())) and hnchat.config.chat.highlight.convar:GetBool() then
+					hnchat.derma.chat.RichText:InsertColorChange( 255, 90, 35, 255 )
+				end]]
+
+				--[[if v:sub(3, 3):find(">") and hnchat.config.chat.greentext.convar:GetBool() then
+					hnchat.derma.chat.RichText:InsertColorChange( 46, 231, 46, 255)
+				end]]
+
+				local url = v:match("https?://[^%s%\"]+")
+				local s,e = v:find("https?://[^%s%\"]+")
+
+				if url then hnchat.derma.chat.RichText:InsertClickableTextStart(url) end
+				hnchat.derma.chat.RichText:AppendText(v)
+				hnchat.derma.chat.RichText:InsertClickableTextEnd()
+			elseif isentity(v) then
+				if v:IsPlayer() then
+					local col = GAMEMODE:GetTeamColor(v)
+					self:InsertColorChange(col.r, col.g, col.b, 255)
+
+					self:AppendText(v:UndecorateNick())
+				else
+					local name = (v.Name and isfunction(v.name) and v:Name()) or v.Name or v.PrintName or tostring(v)
+					if v:EntIndex() == 0 then
+						self:InsertColorChange(106, 90, 205, 255)
+						name = "Console"
+					end
+
+					self:AppendText(name)
+				end
+			end
+		end
 	end
 
 	oldChatAddText = oldChatAddText or chat.AddText
 	function chat.AddText(...)
+		hnchat.AddText( hnchat.derma.chat.RichText, ... )
 		oldChatAddText(...)
-		hnchat.derma.chat.RichText:AppendText("\n")
-
-		if hnchat.settings.chat.time_stamps.convar:GetBool() then
-			hnchat.derma.chat.RichText:InsertColorChange( 119, 171, 218, 255 )
-			hnchat.derma.chat.RichText:AppendText( hnchat.settings.chat.time_24h.convar:GetBool() and (os.date("%H:%M", os.time())) or (os.date("%I:%M %p", os.time())) )
-
-			hnchat.derma.chat.RichText:InsertColorChange( 255, 255, 255, 255 )
-			hnchat.derma.chat.RichText:AppendText(" - ")
-		end
-
-		for _, obj in pairs({...}) do
-			if type(obj) == "table" then
-				hnchat.derma.chat.RichText:InsertColorChange( obj.r, obj.g, obj.b, obj.a )
-			elseif type(obj) == "string"  then
-				--[[if (obj:find(LocalPlayer():Nick()) or obj:find(LocalPlayer():UndecorateNick())) and hnchat.config.chat.highlight.convar:GetBool() then
-					hnchat.derma.chat.RichText:InsertColorChange( 255, 90, 35, 255 )
-				end]]
-
-				--[[if obj:sub(3, 3):find(">") and hnchat.config.chat.greentext.convar:GetBool() then
-					hnchat.derma.chat.RichText:InsertColorChange( 46, 231, 46, 255)
-				end]]
-
-				local url = obj:match("https?://[^%s%\"]+")
-				local s,e = obj:find("https?://[^%s%\"]+")
-
-				if url then hnchat.derma.chat.RichText:InsertClickableTextStart(url) end
-				hnchat.derma.chat.RichText:AppendText(obj)
-				hnchat.derma.chat.RichText:InsertClickableTextEnd()
-			elseif obj:IsPlayer() then
-				--local mark = markup.Parse(obj:Nick())
-				--if (markup.blocks[1].colour.a == 255 and markup.blocks[1].colour.b == 255 and mark.blocks[1].colour.g == 255 and mark.blocks[1].colour.r == 255) then
-					local col = GAMEMODE:GetTeamColor(obj)
-				--[[else
-					local col = markup.blocks[1].colour
-				end]]
-
-				hnchat.derma.chat.RichText:InsertColorChange( col.r, col.g, col.b, 255 )
-				hnchat.derma.chat.RichText:AppendText( obj:UndecorateNick() )
-			end
-		end
 	end
 
 	net.Receive("hnchat_local_receive", function(len)
@@ -1198,7 +1199,7 @@ hook.Add( "Initialize", "hnchat", function()
 		--if not hnchat.derma.dms.tabs:GetActiveTab():GetPanel():IsVisible() then
 			hnchat.derma.dms.tabs.tabs[ply:SteamID()].unread = true
 			surface.PlaySound("friends/message.wav")
-			chat.AddText("New DM from", ply)
+			chat.AddText(Color(200,100,100),"[[ ", color_white, "PM From ", ply, Color(200,100,100), " ]]")
 		--end
 
 		if system.IsWindows() and not system.HasFocus() then system.FlashWindow() end
@@ -1211,13 +1212,6 @@ hook.Add( "Initialize", "hnchat", function()
 		elseif bind:find("messagemode") then
 			RunConsoleCommand("hnchat_open")
 			return true
-		end
-	end )
-	hook.Add( "ChatText", "serverNotifications", function( index, name, text, type )
-		if type == "servermsg" or type == "none" then
-			chat.AddText( Color(151,211,255), text )
-		else
-			print(index, name, text, type)
 		end
 	end )
 	concommand.Add( "hnchat_open",function() -- opens chat
@@ -1250,10 +1244,10 @@ hook.Add( "Initialize", "hnchat", function()
 	function hnchat.UnLoad()
 		-- restore original functions
 		chat.AddText = oldChatAddText
-		chat.GetChatBoxPos = oldPos
+		--[[chat.GetChatBoxPos = oldPos
 		chat.GetChatBoxSize = oldSize
 		chat.Open = oldOpen
-		chat.Close = oldClose
+		chat.Close = oldClose]]
 		Say = oldSay
 
 		-- set old functions to nil for whatever reason because im paranoid
@@ -1269,7 +1263,9 @@ hook.Add( "Initialize", "hnchat", function()
 		hook.Remove( "PlayerBindPress", "hnchat" )
 		hook.Remove( "OnPlayerChat", "hnchat" )
 
+		-- empty
 		hnchat = nil
+		chatgui = nil
 	end
 
 	hnchat.closeChatbox()
