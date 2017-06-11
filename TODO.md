@@ -11,6 +11,7 @@
 * add in emoji picker, etc
 * continue working
 * add red color to chat mode button thing
+* ~~fix chatsounds int~~
 
 # DM Chat
 * ADD IN GROUP DMS. rewrite the net funcs to change recipients to a table
@@ -24,3 +25,4 @@
 # Settings
 * get current value of net_graph and highlight it on settings and clear all radios if any == 0
 * remove small gap between settings groups
+* add settings for PMs (you know the ones)
