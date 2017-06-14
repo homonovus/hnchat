@@ -27,4 +27,3 @@
 * remove small gap between settings groups
 * ~~add settings for PMs (you know the ones)~~
 * copy all of meta's settings lol
-* support for media player/PlayX
