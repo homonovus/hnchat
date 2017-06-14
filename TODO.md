@@ -3,7 +3,7 @@
 * ~~finish adding in links to richtexts~~ highlight links only, not the whole line
 * ~~**make modular**~~ finish modularity
 * ~~frame dragging~~
-* ~~not replace chat.addtext maybe... maybe~~ make a appendinto function
+* ~~not replace chat.addtext maybe... maybe~~ ~~make a appendinto function~~
 * add in ctrl+backspace support into TextEntry's
 * optimize if needed ????
 
@@ -18,7 +18,8 @@
 * ~~fix recipient tab rendering~~ fix active tab rendering
 
 # Lua Editor
-* ~~figure out how to get value of editor from lua: maybe window.gmodinterface???~~ value of lua editor is through custom derma panel; figure it out
+* ~~figure out how to get value of editor from lua: maybe window.gmodinterface???~~
+* return value of editor from dhtml: js -> lua
 * give lua editor proper tab support with dpropertysheet
 * tab dragging
 
