@@ -4,6 +4,37 @@ hook.Add( "Initialize", "hnchat", function()
 	hook.Remove( "Initialize", "hnchat" )
 
 	hnchat = hnchat or {}
+	oldchatgui = oldchatgui or chatgui
+	local hnchat_timestamps = CreateClientConVar( "hnchat_timestamps", 1 )
+	local hnchat_timestamps_24hr = CreateClientConVar( "hnchat_timestamps_24hr", 1 )
+	local hnchat_greentext = CreateClientConVar( "hnchat_greentext", 1 )
+	local hnchat_highlight = CreateClientConVar( "hnchat_highlight", 1 )
+	local hnchat_pm_disable = CreateClientConVar( "hnchat_pm_disable", 0 )
+	local hnchat_pm_friendsonly = CreateClientConVar( "hnchat_pm_friendsonly", 0 )
+	local hnchat_pmmode = CreateClientConVar( "hnchat_pmmode", 0 )
+	local pm_chatsounds = CreateClientConVar( "pm_chatsounds", 0 )
+	local pm_hud = CreateClientConVar( "pm_hud", 0 )
+	local pm_hud_notify = CreateClientConVar( "pm_hud_notify", 0 )
+	local pm_hud_notify_sound = CreateClientConVar( "pm_hud_notify_sound", 0 )
+	local pm_notify_window = CreateClientConVar( "pm_notify_window", 0 )
+	concommand.Add( "pm", function(ply, cmd, args)
+		if not args or not args[1] or args[1] == ""or not player.GetByName(args[1]) then
+			Msg("player not found\n")
+		else
+			local txt = ""
+			local ply = player.GetByName(args[1])
+			for k, v in next, args do txt = k ~= 1 and (txt..(k ~= 2 and " " or "")..v) or txt end
+			dmPlayer(ply, txt)
+		end
+	end, function(cmd, args)
+		args = args:Trim()
+		local auto = {}
+
+		for k, v in next, player.GetAll() do
+			if string.find( string.lower(v:UndecorateNick()), string.lower(args) ) then table.insert( auto, cmd.." \""..v:UndecorateNick().."\"" ) end
+		end
+		return auto
+	end)
 
 	function hnchat.tofull()
 		hnchat.isFull = true
@@ -68,49 +99,6 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.dms.tabs.tabs[sid].Paint = function( self, w ,h )
 			draw.RoundedBox( 0, 0, 0, w, h, Color(37,37,37,196))
 		end
-		hnchat.derma.dms.tabs.tabs[sid].AddText = function(...)
-			local self = hnchat.derma.dms.tabs.tabs[sid]
-			self:AppendText("\n")
-
-			if hnchat.settings.chat.time_stamps.convar:GetBool() then
-				self:InsertColorChange( 119, 171, 218, 255 )
-				self:AppendText( hnchat.settings.chat.time_24h.convar:GetBool() and (os.date("%H:%M", os.time())) or (os.date("%I:%M %p", os.time())) )
-
-				self:InsertColorChange( 255, 255, 255, 255 )
-				self:AppendText(" - ")
-			end
-
-			for _, obj in pairs({...}) do
-				if type(obj) == "table" then
-					self:InsertColorChange( obj.r, obj.g, obj.b, obj.a )
-				elseif type(obj) == "string"  then
-					--[[if (obj:find(LocalPlayer():Nick()) or obj:find(LocalPlayer():UndecorateNick())) and hnchat.config.chat.highlight.convar:GetBool() then
-						self:InsertColorChange( 255, 90, 35, 255 )
-					end]]
-
-					--[[if obj:sub(3, 3):find(">") and hnchat.config.chat.greentext.convar:GetBool() then
-						self:InsertColorChange( 46, 231, 46, 255)
-					end]]
-
-					local url = obj:match("https?://[^%s%\"]+")
-					local s,e = obj:find("https?://[^%s%\"]+")
-
-					if url then self:InsertClickableTextStart(url) end
-					self:AppendText(obj)
-					self:InsertClickableTextEnd()
-				elseif obj:IsPlayer() then
-					--local mark = markup.Parse(obj:Nick())
-					--if (markup.blocks[1].colour.a == 255 and markup.blocks[1].colour.b == 255 and mark.blocks[1].colour.g == 255 and mark.blocks[1].colour.r == 255) then
-						local col = GAMEMODE:GetTeamColor(obj)
-					--[[else
-						local col = markup.blocks[1].colour
-					end]]
-
-					self:InsertColorChange( col.r, col.g, col.b, 255 )
-					self:AppendText( obj:UndecorateNick() )
-				end
-			end
-		end
 		hnchat.derma.dms.tabs.tabs[sid].Player = ply
 		hnchat.derma.dms.tabs.tabs[sid].oldThink = hnchat.derma.dms.tabs.tabs[sid].Think
 		hnchat.derma.dms.tabs.tabs[sid].Think = function(self)
@@ -156,7 +144,12 @@ hook.Add( "Initialize", "hnchat", function()
 			return true
 		end
 
-		hnchat.derma.dms.tabs.tabs[sid].AddText("Chatting with ", ply)
+		hnchat.AddText(hnchat.derma.dms.tabs.tabs[sid], "Chatting with ", ply)
+	end
+	player.GetByName = function(name)
+		for k, v in next, player.GetAll() do
+			if string.find( string.lower(v:UndecorateNick()), string.lower(name) ) then return v end
+		end
 	end
 
 	local PLAYER = FindMetaTable("Player")
@@ -191,10 +184,10 @@ hook.Add( "Initialize", "hnchat", function()
 		end
 	end
 	function SayLocal(txt)
+		if util.NetworkStringToID("hnchat_local_send") == 0 then return end
+
 		local meme = { Color(255,0,0), "(Local @ " }
 		local sphere = ents.FindInSphere( LocalPlayer():GetPos(), 196 )
-
-		if util.NetworkStringToID("hnchat_local_send") == 0 then return end
 
 		net.Start( "hnchat_local_send", false )
 			local plys = {}
@@ -227,41 +220,18 @@ hook.Add( "Initialize", "hnchat", function()
 		chat.AddText( Color(24,161,35), "(Local) ", LocalPlayer(), color_white, ": " .. txt )
 	end
 	function dmPlayer(ply, txt)
-		if util.NetworkStringToID("hnchat_dm_send") == 0 then return end
+		if util.NetworkStringToID("hnchat_dm_send") == 0 or hnchat_pm_disable:GetBool() then return end
+		if not hnchat.derma.dms.tabs.tabs[ply:SteamID()] then hnchat.addDM(ply) end
 
-		chat.AddText(Color(200,100,100), "[ ", color_white, "PM to ", ply, Color(200,100,100), " ]", LocalPlayer(), color_white, ": ", txt)
+		chat.AddText(Color(200,100,100), "[ ", color_white, "PM to ", ply, Color(200,100,100), " ] ", LocalPlayer(), color_white, ": ", txt)
+		hnchat.AddText( hnchat.derma.dms.tabs.tabs[ply:SteamID()], LocalPlayer(), color_white, ": ", txt )
 
+		if pm_chatsounds:GetBool() then RunConsoleCommand("saysound", txt) end
 		net.Start( "hnchat_dm_send", false )
 			net.WriteEntity(ply)
 			net.WriteString(txt)
 		net.SendToServer()
 	end
-
-	hnchat.settings = {
-		chat = {
-			time_stamps	= {
-				label	= "Timestamps (chat history)",
-				convar	= CreateClientConVar( "hnchat_timestamps", 1 ),
-				desc	= "Display timestamps in chatbox",
-			},
-			time_24h	= {
-				label	= "24 Hour Timestamps",
-				convar	= CreateClientConVar( "hnchat_timestamps_24hr", 1 ),
-				desc	= "Display 24 hour time in timestamps",
-			},
-			greentext	= {
-				label	= "> Green text",
-				convar	= CreateClientConVar( "hnchat_greentext", 1 ),
-				desc	= "> implying you dont know what greentext is",
-			},
-			highlight	= {
-				label	= "Highlight messages that mention you",
-				convar	= CreateClientConVar( "hnchat_highlight", 1 ),
-				desc	= "Messages will be coloured orange",
-			},
-		},
-		debug = true,
-	}
 
 	hnchat.derma = hnchat.derma or {}
 		hnchat.derma.Frame = vgui.Create("DFrame")
@@ -491,6 +461,22 @@ hook.Add( "Initialize", "hnchat", function()
 			menu:Open()
 		end
 
+		hnchat.derma.chat.emojibase = vgui.Create( "DPanel", hnchat.derma.chat.message )
+		hnchat.derma.chat.emojibase:Dock(RIGHT)
+		hnchat.derma.chat.emojibase.Paint = function() return false end
+
+		hnchat.derma.chat.emojibase.steam = vgui.Create( "DButton", hnchat.derma.chat.emojibase )
+		hnchat.derma.chat.emojibase.steam:Dock(LEFT)
+		hnchat.derma.chat.emojibase.steam:SetSize(24,16)
+
+		hnchat.derma.chat.emojibase.silk = vgui.Create( "DButton", hnchat.derma.chat.emojibase )
+		hnchat.derma.chat.emojibase.silk:Dock(FILL)
+		hnchat.derma.chat.emojibase.silk:SetSize(24,16)
+
+		hnchat.derma.chat.emojibase.color = vgui.Create( "DButton", hnchat.derma.chat.emojibase )
+		hnchat.derma.chat.emojibase.color:Dock(RIGHT)
+		hnchat.derma.chat.emojibase.color:SetSize(24,16)
+
 	hnchat.derma.dms = hnchat.derma.dms or {}
 		hnchat.derma.dms.tabs = vgui.Create( "DPropertySheet", hnchat.derma.dmpanel )
 		hnchat.derma.dms.tabs:Dock(FILL)
@@ -580,7 +566,6 @@ hook.Add( "Initialize", "hnchat", function()
 				self:SetText("")
 				--hnchat.closeChatbox()
 				if str ~= "" and hnchat.derma.dms.tabs:GetActiveTab() ~= nil then
-					hnchat.derma.dms.tabs:GetActiveTab():GetPanel().AddText( LocalPlayer(), color_white, ": ", str )
 					dmPlayer( hnchat.derma.dms.tabs:GetActiveTab():GetPanel().Player, str )
 				end
 
@@ -990,19 +975,44 @@ hook.Add( "Initialize", "hnchat", function()
 			hnchat.derma.config.chat.list:EnableVerticalScrollbar(true)
 			hnchat.derma.config.chat:SetContents(hnchat.derma.config.chat.list)
 
-			for k, v in pairs(hnchat.settings.chat) do
-				hnchat.derma.config.chat.k = vgui.Create("DCheckBoxLabel")
-				hnchat.derma.config.chat.k:SetText(v.label)
-				hnchat.derma.config.chat.k:SetConVar(v.convar:GetName())
-				hnchat.derma.config.chat.k:SetValue(v.convar:GetBool())
-				hnchat.derma.config.chat.k:SizeToContents()
-				hnchat.derma.config.chat.k:SetTextColor(Color( 3, 3, 3, 255 ))
-				hnchat.derma.config.chat.k:SetToolTip(v.desc)
-				hnchat.derma.config.chat.list:AddItem(hnchat.derma.config.chat.k)
-			end
-		hnchat.derma.config.chathud = hnchat.derma.config.CList:Add("Chat HUD")
+			hnchat.derma.config.chat.time_stamps = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.chat.time_stamps:SetText("Timestamps (chat history)")
+			hnchat.derma.config.chat.time_stamps:SetConVar(hnchat_timestamps:GetName())
+			hnchat.derma.config.chat.time_stamps:SetValue(hnchat_timestamps:GetBool())
+			hnchat.derma.config.chat.time_stamps:SizeToContents()
+			hnchat.derma.config.chat.time_stamps:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.chat.time_stamps:SetToolTip("CVar: "..hnchat_timestamps:GetName())
+			hnchat.derma.config.chat.list:AddItem(hnchat.derma.config.chat.time_stamps)
+
+			hnchat.derma.config.chat.time_24h = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.chat.time_24h:SetText("24 Hour Timestamps")
+			hnchat.derma.config.chat.time_24h:SetConVar(hnchat_timestamps_24hr:GetName())
+			hnchat.derma.config.chat.time_24h:SetValue(hnchat_timestamps_24hr:GetBool())
+			hnchat.derma.config.chat.time_24h:SizeToContents()
+			hnchat.derma.config.chat.time_24h:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.chat.time_24h:SetToolTip("CVar: "..hnchat_timestamps_24hr:GetName())
+			hnchat.derma.config.chat.list:AddItem(hnchat.derma.config.chat.time_24h)
+
+			hnchat.derma.config.chat.greentext = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.chat.greentext:SetText("> Green text")
+			hnchat.derma.config.chat.greentext:SetConVar(hnchat_greentext:GetName())
+			hnchat.derma.config.chat.greentext:SetValue(hnchat_greentext:GetBool())
+			hnchat.derma.config.chat.greentext:SizeToContents()
+			hnchat.derma.config.chat.greentext:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.chat.greentext:SetToolTip("CVar: "..hnchat_greentext:GetName())
+			hnchat.derma.config.chat.list:AddItem(hnchat.derma.config.chat.greentext)
+
+			hnchat.derma.config.chat.highlight = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.chat.highlight:SetText("Highlight messages that mention you")
+			hnchat.derma.config.chat.highlight:SetConVar(hnchat_highlight:GetName())
+			hnchat.derma.config.chat.highlight:SetValue(hnchat_highlight:GetBool())
+			hnchat.derma.config.chat.highlight:SizeToContents()
+			hnchat.derma.config.chat.highlight:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.chat.highlight:SetToolTip("CVar: "..hnchat_highlight:GetName())
+			hnchat.derma.config.chat.list:AddItem(hnchat.derma.config.chat.highlight)
+		--[[hnchat.derma.config.chathud = hnchat.derma.config.CList:Add("Chat HUD")
 			hnchat.derma.config.chathud:SetExpanded(false)
-			hnchat.derma.config.chathud:SetPadding(0)
+			hnchat.derma.config.chathud:SetPadding(0)]]
 		hnchat.derma.config.audio = hnchat.derma.config.CList:Add("Audio")
 			hnchat.derma.config.audio:SetExpanded(false)
 			hnchat.derma.config.audio:SetPadding(0)
@@ -1022,12 +1032,108 @@ hook.Add( "Initialize", "hnchat", function()
 			hnchat.derma.config.audio.outmute:SetTextColor(Color( 3, 3, 3, 255 ))
 			hnchat.derma.config.audio.outmute:SetToolTip("Mute in game sounds while tabbed out of game")
 			hnchat.derma.config.audio.list:AddItem(hnchat.derma.config.audio.outmute)
-		hnchat.derma.config.graphics = hnchat.derma.config.CList:Add("Performance / Graphics")
+		--[[hnchat.derma.config.graphics = hnchat.derma.config.CList:Add("Performance / Graphics")
 			hnchat.derma.config.graphics:SetExpanded(false)
-			hnchat.derma.config.graphics:SetPadding(0)
+			hnchat.derma.config.graphics:SetPadding(0)]]
 		hnchat.derma.config.dms = hnchat.derma.config.CList:Add( "PM" )
 			hnchat.derma.config.dms:SetExpanded(false)
 			hnchat.derma.config.dms:SetPadding(0)
+
+			hnchat.derma.config.dms.list = vgui.Create( "DPanelList", hnchat.derma.config.dms )
+			hnchat.derma.config.dms.list:SetSpacing(7)
+			hnchat.derma.config.dms.list:SetPadding(5)
+			hnchat.derma.config.dms.list:EnableHorizontal(false)
+			hnchat.derma.config.dms.list:EnableVerticalScrollbar(true)
+			hnchat.derma.config.dms:SetContents(hnchat.derma.config.dms.list)
+
+			hnchat.derma.config.dms.disable = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.dms.disable:SetText("Disable")
+			hnchat.derma.config.dms.disable:SetConVar(hnchat_pm_disable:GetName())
+			hnchat.derma.config.dms.disable:SetValue(hnchat_pm_disable:GetBool())
+			hnchat.derma.config.dms.disable:SizeToContents()
+			hnchat.derma.config.dms.disable:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.dms.disable:SetToolTip("CVar: "..hnchat_pm_disable:GetName())
+			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.disable)
+
+			hnchat.derma.config.dms.friendsonly = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.dms.friendsonly:SetText("Friends only")
+			hnchat.derma.config.dms.friendsonly:SetConVar(hnchat_pm_friendsonly:GetName())
+			hnchat.derma.config.dms.friendsonly:SetValue(hnchat_pm_friendsonly:GetBool())
+			hnchat.derma.config.dms.friendsonly:SizeToContents()
+			hnchat.derma.config.dms.friendsonly:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.dms.friendsonly:SetToolTip("CVar: "..hnchat_pm_friendsonly:GetName())
+			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.friendsonly)
+
+			-- spacer like in dmenu
+
+			hnchat.derma.config.dms.pmchat = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.dms.pmchat:SetText("PM in chat")
+			hnchat.derma.config.dms.pmchat:SetConVar(pm_hud:GetName())
+			hnchat.derma.config.dms.pmchat:SetValue(pm_hud:GetBool())
+			hnchat.derma.config.dms.pmchat:SizeToContents()
+			hnchat.derma.config.dms.pmchat:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.dms.pmchat:SetToolTip("CVar: "..pm_hud:GetName())
+			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.pmchat)
+
+			-- spacer like in dmenu
+
+			hnchat.derma.config.dms.notiftext = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.dms.notiftext:SetText("Notify Text")
+			hnchat.derma.config.dms.notiftext:SetConVar(pm_hud_notify:GetName())
+			hnchat.derma.config.dms.notiftext:SetValue(pm_hud_notify:GetBool())
+			hnchat.derma.config.dms.notiftext:SizeToContents()
+			hnchat.derma.config.dms.notiftext:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.dms.notiftext:SetToolTip("CVar: "..pm_hud_notify:GetName())
+			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.notiftext)
+
+			hnchat.derma.config.dms.notifsound = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.dms.notifsound:SetText("Notify Sound")
+			hnchat.derma.config.dms.notifsound:SetConVar(pm_hud_notify_sound:GetName())
+			hnchat.derma.config.dms.notifsound:SetValue(pm_hud_notify_sound:GetBool())
+			hnchat.derma.config.dms.notifsound:SizeToContents()
+			hnchat.derma.config.dms.notifsound:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.dms.notifsound:SetToolTip("CVar: "..pm_hud_notify_sound:GetName())
+			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.notifsound)
+
+			-- spacer
+
+			hnchat.derma.config.dms.pmmode = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.dms.pmmode:SetText("Team chat -> PM")
+			hnchat.derma.config.dms.pmmode:SetConVar(hnchat_pmmode:GetName())
+			hnchat.derma.config.dms.pmmode:SetValue(hnchat_pmmode:GetBool())
+			hnchat.derma.config.dms.pmmode:SizeToContents()
+			hnchat.derma.config.dms.pmmode:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.dms.pmmode:SetToolTip("CVar: "..hnchat_pmmode:GetName())
+			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.pmmode)
+
+			hnchat.derma.config.dms.chatsounds = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.dms.chatsounds:SetText("Chatsounds")
+			hnchat.derma.config.dms.chatsounds:SetConVar(pm_chatsounds:GetName())
+			hnchat.derma.config.dms.chatsounds:SetValue(pm_chatsounds:GetBool())
+			hnchat.derma.config.dms.chatsounds:SizeToContents()
+			hnchat.derma.config.dms.chatsounds:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.dms.chatsounds:SetToolTip("CVar: "..pm_chatsounds:GetName())
+			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.chatsounds)
+
+			-- spacer
+
+			hnchat.derma.config.dms.windowg = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.dms.windowg:SetText("(1) Highlight GMod Window on PM")
+			hnchat.derma.config.dms.windowg:SetConVar(pm_notify_window:GetName())
+			hnchat.derma.config.dms.windowg:SetValue(1)
+			hnchat.derma.config.dms.windowg:SizeToContents()
+			hnchat.derma.config.dms.windowg:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.dms.windowg:SetToolTip("CVar: "..pm_notify_window:GetName())
+			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.windowg)
+
+			hnchat.derma.config.dms.windowf = vgui.Create("DCheckBoxLabel")
+			hnchat.derma.config.dms.windowf:SetText("(2) Highlight GMod Window on PM (Friends only)")
+			hnchat.derma.config.dms.windowf:SetConVar(pm_notify_window:GetName())
+			hnchat.derma.config.dms.windowf:SetValue(2)
+			hnchat.derma.config.dms.windowf:SizeToContents()
+			hnchat.derma.config.dms.windowf:SetTextColor(Color(3,3,3))
+			hnchat.derma.config.dms.windowf:SetToolTip("CVar: "..pm_notify_window:GetName())
+			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.windowf)
 		hnchat.derma.config.game = hnchat.derma.config.CList:Add("Game")
 			hnchat.derma.config.game:SetExpanded(false)
 			hnchat.derma.config.game:SetPadding(0)
@@ -1042,32 +1148,17 @@ hook.Add( "Initialize", "hnchat", function()
 			hnchat.derma.config.game.netgraph = {}
 			for i=1, 4 do
 				hnchat.derma.config.game.netgraph[i] = vgui.Create("DCheckBoxLabel")
-				hnchat.derma.config.game.netgraph[i]:SetText( "Net Graph " .. i )
-				hnchat.derma.config.game.netgraph[i].val = i
-				hnchat.derma.config.game.netgraph[i]:SetValue(0)
+				hnchat.derma.config.game.netgraph[i]:SetText("Net Graph "..i)
+				hnchat.derma.config.game.netgraph[i]:SetValue(i)
+				hnchat.derma.config.game.netgraph[i]:SetConVar("net_graph")
 				hnchat.derma.config.game.netgraph[i]:SizeToContents()
-				hnchat.derma.config.game.netgraph[i]:SetTextColor(Color( 3, 3, 3, 255 ))
-				hnchat.derma.config.game.netgraph[i]:SetToolTip( "Set net graph value to " .. i )
+				hnchat.derma.config.game.netgraph[i]:SetTextColor(Color(3,3,3))
+				hnchat.derma.config.game.netgraph[i]:SetToolTip( "CVar: net_graph "..i )
 				hnchat.derma.config.game.list:AddItem(hnchat.derma.config.game.netgraph[i])
 			end
-			local highval = 0
-			for k, v in pairs(hnchat.derma.config.game.netgraph) do
-				v.OnChange = function( self, val )
-					if val then
-						LocalPlayer():ConCommand( "net_graph " .. tostring(self.val) )
-						for k, v in pairs(hnchat.derma.config.game.netgraph) do
-							if v ~= self then
-								v:SetValue(0)
-							else
-								--nothing
-							end
-						end
-					end
-				end
-			end
-		hnchat.derma.config.media = hnchat.derma.config.CList:Add( "Media Player" )
+		--[[hnchat.derma.config.media = hnchat.derma.config.CList:Add( "Media Player" )
 			hnchat.derma.config.media:SetExpanded(false)
-			hnchat.derma.config.media:SetPadding(0)
+			hnchat.derma.config.media:SetPadding(0)]]
  
 	hnchat.derma.tabs:AddSheet( "Global", hnchat.derma.chatpanel, "icon16/comments.png", false, false, "Chat" )
 	hnchat.derma.tabs:AddSheet( "PM", hnchat.derma.dmpanel, "icon16/group.png", false, false, "PM" )
@@ -1124,16 +1215,16 @@ hook.Add( "Initialize", "hnchat", function()
 		local tab = {...}
 		self:AppendText("\n")
 
-		if hnchat.settings.chat.time_stamps.convar:GetBool() then
+		if hnchat_timestamps:GetBool() then
 			self:InsertColorChange( 119, 171, 218, 255 )
-			self:AppendText( hnchat.settings.chat.time_24h.convar:GetBool() and (os.date("%H:%M", os.time())) or (os.date("%I:%M %p", os.time())) )
+			self:AppendText( hnchat_timestamps_24hr:GetBool() and (os.date("%H:%M", os.time())) or (os.date("%I:%M %p", os.time())) )
 
 			self:InsertColorChange( 255, 255, 255, 255 )
 			self:AppendText(" - ")
 		end
 
 		if #tab == 1 and isstring(tab[1]) then
-			self:AppendText(quick_parse(tab[1]))
+			self:AppendText(tab[1])
 			self:AppendText("\n")
 
 			return
@@ -1143,20 +1234,20 @@ hook.Add( "Initialize", "hnchat", function()
 			if IsColor(v) or istable(v) then
 				self:InsertColorChange(v.r, v.g, v.b, 255)
 			elseif type(v) == "string"  then
-				--[[if (v:find(LocalPlayer():Nick()) or v:find(LocalPlayer():UndecorateNick())) and hnchat.config.chat.highlight.convar:GetBool() then
+				--[[if (v:find(LocalPlayer():Nick()) or v:find(LocalPlayer():UndecorateNick())) and hnchat_highlight:GetBool() then
 					hnchat.derma.chat.RichText:InsertColorChange( 255, 90, 35, 255 )
 				end]]
 
-				--[[if v:sub(3, 3):find(">") and hnchat.config.chat.greentext.convar:GetBool() then
+				--[[if v:sub(3, 3):find(">") and hnchat_greentext:GetBool() then
 					hnchat.derma.chat.RichText:InsertColorChange( 46, 231, 46, 255)
 				end]]
 
 				local url = v:match("https?://[^%s%\"]+")
 				local s,e = v:find("https?://[^%s%\"]+")
 
-				if url then hnchat.derma.chat.RichText:InsertClickableTextStart(url) end
-				hnchat.derma.chat.RichText:AppendText(v)
-				hnchat.derma.chat.RichText:InsertClickableTextEnd()
+				if url then self:InsertClickableTextStart(url) end
+				self:AppendText(v)
+				self:InsertClickableTextEnd()
 			elseif isentity(v) then
 				if v:IsPlayer() then
 					local col = GAMEMODE:GetTeamColor(v)
@@ -1190,19 +1281,23 @@ hook.Add( "Initialize", "hnchat", function()
 	end)
 
 	net.Receive("hnchat_dm_receive", function(len)
+		if hnchat_pm_disable:GetBool() then return end
+
 		local ply = net.ReadEntity()
 		local txt = net.ReadString()
 
 		if not hnchat.derma.dms.tabs.tabs[ply:SteamID()] then hnchat.addDM(ply) end
 
-		hnchat.derma.dms.tabs.tabs[ply:SteamID()].AddText( ply, color_white, ": " .. txt )
+		hnchat.AddText(hnchat.derma.dms.tabs.tabs[ply:SteamID()], ply, color_white, ": ", txt )
 		--if not hnchat.derma.dms.tabs:GetActiveTab():GetPanel():IsVisible() then
 			hnchat.derma.dms.tabs.tabs[ply:SteamID()].unread = true
-			surface.PlaySound("friends/message.wav")
-			chat.AddText(Color(200,100,100),"[[ ", color_white, "PM From ", ply, Color(200,100,100), " ]]")
+			if pm_hud_notify_sound:GetBool() then surface.PlaySound("friends/message.wav") end
+			if pm_hud_notify:GetBool() then chat.AddText(Color(200,100,100),"[[ ", color_white, "PM From ", ply, Color(200,100,100), " ]]") end
 		--end
-
-		if system.IsWindows() and not system.HasFocus() then system.FlashWindow() end
+		if pm_notify_window:GetInt() ~= 0 then
+			--if ply:GetFriendStatus() == "friend" and pm_notify_window:GetInt() <= 2
+			if system.IsWindows() and not system.HasFocus() then system.FlashWindow() end
+		end
 	end)
 
 	hook.Add( "PlayerBindPress", "hnchat", function( ply, bind, pressed )
@@ -1265,7 +1360,8 @@ hook.Add( "Initialize", "hnchat", function()
 
 		-- empty
 		hnchat = nil
-		chatgui = nil
+		chatgui = oldchatgui
+		oldchatgui = nil
 	end
 
 	hnchat.closeChatbox()
