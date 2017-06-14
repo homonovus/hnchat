@@ -1,4 +1,8 @@
-if hnchat then hnchat.UnLoad() end
+--if hnchat then hnchat.UnLoad() end
+
+--local hnchat_disable = CreateClientConVar("hnchat_disable",1) -- disable by default bc people might not want it
+
+--if hnchat_disable:GetBool() then return end
 
 hook.Add( "Initialize", "hnchat", function()
 	hook.Remove( "Initialize", "hnchat" )
@@ -9,32 +13,6 @@ hook.Add( "Initialize", "hnchat", function()
 	local hnchat_timestamps_24hr = CreateClientConVar( "hnchat_timestamps_24hr", 1 )
 	local hnchat_greentext = CreateClientConVar( "hnchat_greentext", 1 )
 	local hnchat_highlight = CreateClientConVar( "hnchat_highlight", 1 )
-	local hnchat_pm_disable = CreateClientConVar( "hnchat_pm_disable", 0 )
-	local hnchat_pm_friendsonly = CreateClientConVar( "hnchat_pm_friendsonly", 0 )
-	local hnchat_pmmode = CreateClientConVar( "hnchat_pmmode", 0 )
-	local pm_chatsounds = CreateClientConVar( "pm_chatsounds", 0 )
-	local pm_hud = CreateClientConVar( "pm_hud", 0 )
-	local pm_hud_notify = CreateClientConVar( "pm_hud_notify", 0 )
-	local pm_hud_notify_sound = CreateClientConVar( "pm_hud_notify_sound", 0 )
-	local pm_notify_window = CreateClientConVar( "pm_notify_window", 0 )
-	concommand.Add( "pm", function(ply, cmd, args)
-		if not args or not args[1] or args[1] == ""or not player.GetByName(args[1]) then
-			Msg("player not found\n")
-		else
-			local txt = ""
-			local ply = player.GetByName(args[1])
-			for k, v in next, args do txt = k ~= 1 and (txt..(k ~= 2 and " " or "")..v) or txt end
-			dmPlayer(ply, txt)
-		end
-	end, function(cmd, args)
-		args = args:Trim()
-		local auto = {}
-
-		for k, v in next, player.GetAll() do
-			if string.find( string.lower(v:UndecorateNick()), string.lower(args) ) then table.insert( auto, cmd.." \""..v:UndecorateNick().."\"" ) end
-		end
-		return auto
-	end)
 
 	function hnchat.tofull()
 		hnchat.isFull = true
@@ -73,7 +51,6 @@ hook.Add( "Initialize", "hnchat", function()
 		gamemode.Call( "FinishChat" )
 
 		hnchat.derma.chat.TextEntry:SetText("")
-		hnchat.derma.dms.TextEntry:SetText("")
 		gamemode.Call( "ChatTextChanged", "" )
 	end
 	function hnchat.openChatbox(mode)
@@ -84,72 +61,6 @@ hook.Add( "Initialize", "hnchat", function()
 
 		gamemode.Call("StartChat")
 		gamemode.Call( "ChatTextChanged", "" )
-	end
-	function hnchat.addDM(ply)
-		if not IsValid(ply) then return end
-		local sid = ply:SteamID()
-		if IsValid(hnchat.derma.dms.tabs.tabs[sid]) then return end
-
-		hnchat.derma.dms.tabs.tabs[sid] = vgui.Create("RichText")
-		hnchat.derma.dms.tabs.tabs[sid]:Dock(FILL)
-		hnchat.derma.dms.tabs.tabs[sid].PerformLayout = function( self )
-			self:SetFontInternal( "DermaDefault" )
-			self:SetFGColor(Color( 255, 255, 255, 128))
-		end
-		hnchat.derma.dms.tabs.tabs[sid].Paint = function( self, w ,h )
-			draw.RoundedBox( 0, 0, 0, w, h, Color(37,37,37,196))
-		end
-		hnchat.derma.dms.tabs.tabs[sid].Player = ply
-		hnchat.derma.dms.tabs.tabs[sid].oldThink = hnchat.derma.dms.tabs.tabs[sid].Think
-		hnchat.derma.dms.tabs.tabs[sid].Think = function(self)
-			if self:IsVisible() then
-				self.unread = false
-			end
-		end
-
-		local t = hnchat.derma.dms.tabs:AddSheet( ply:UndecorateNick(), hnchat.derma.dms.tabs.tabs[sid], nil, false, false, ply:UndecorateNick() )
-		t.Tab.DoRightClick = function(self)
-			hnchat.derma.dms.tabs:CloseTab( t.Tab, true )
-			hnchat.derma.dms.tabs.tabs[sid] = nil
-		end
-		t.Tab.GetTabHeight = function() return 20 end
-		t.Tab.Paint = function(self, w, h)
-			local col, textcol
-
-			if self:IsActive() then
-				col = Color(225,228,232)
-				surface.SetDrawColor(Color(116,170,232))
-				surface.DrawRect( 0, h-2, w, 2 )
-			end
-
-			if self:IsHovered() then
-				col = Color(208,208,208)
-				textcol = Color(96,42,180)
-			elseif not self:IsHovered() then
-				col = Color(0,0,0,0)
-				textcol = Color(81,81,81)
-			end
-
-			if self:IsDown() then
-				textcol = color_white
-			end
-			
-			if hnchat.derma.dms.tabs.tabs[sid].unread then
-				col = Color(math.Clamp(math.abs(math.sin(RealTime()*5)*255),225	,255),228,232)
-			end
-
-			surface.SetDrawColor(col)
-			surface.DrawRect(0,0,w,h)
-			draw.SimpleText( self:GetText(), "DermaDefault", w/2, h/2, textcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-			return true
-		end
-
-		hnchat.AddText(hnchat.derma.dms.tabs.tabs[sid], "Chatting with ", ply)
-	end
-	player.GetByName = function(name)
-		for k, v in next, player.GetAll() do
-			if string.find( string.lower(v:UndecorateNick()), string.lower(name) ) then return v end
-		end
 	end
 
 	local PLAYER = FindMetaTable("Player")
@@ -219,19 +130,6 @@ hook.Add( "Initialize", "hnchat", function()
 		chat.AddText( unpack(meme) )
 		chat.AddText( Color(24,161,35), "(Local) ", LocalPlayer(), color_white, ": " .. txt )
 	end
-	function dmPlayer(ply, txt)
-		if util.NetworkStringToID("hnchat_dm_send") == 0 or hnchat_pm_disable:GetBool() then return end
-		if not hnchat.derma.dms.tabs.tabs[ply:SteamID()] then hnchat.addDM(ply) end
-
-		chat.AddText(Color(200,100,100), "[ ", color_white, "PM to ", ply, Color(200,100,100), " ] ", LocalPlayer(), color_white, ": ", txt)
-		hnchat.AddText( hnchat.derma.dms.tabs.tabs[ply:SteamID()], LocalPlayer(), color_white, ": ", txt )
-
-		if pm_chatsounds:GetBool() then RunConsoleCommand("saysound", txt) end
-		net.Start( "hnchat_dm_send", false )
-			net.WriteEntity(ply)
-			net.WriteString(txt)
-		net.SendToServer()
-	end
 
 	hnchat.derma = hnchat.derma or {}
 		hnchat.derma.Frame = vgui.Create("DFrame")
@@ -294,16 +192,9 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.tabs.tabScroller.oldThink(self)
 	end
 
-	hnchat.derma.chatpanel = vgui.Create("DPanel")
-	hnchat.derma.dmpanel = vgui.Create("DPanel")
-	hnchat.derma.luapanel = vgui.Create("DPanel")
-	hnchat.derma.configpanel = vgui.Create("DPanel")
-	hnchat.derma.chatpanel.Paint = function() return false end
-	hnchat.derma.dmpanel.Paint = function() return false end
-	hnchat.derma.luapanel.Paint = function() return false end
-
-	hnchat.derma.chat = hnchat.derma.chat or {}
-		hnchat.derma.chat.RichText = vgui.Create( "RichText", hnchat.derma.chatpanel )
+	hnchat.derma.chat = vgui.Create("DPanel")
+		hnchat.derma.chat.Paint = function() return false end
+		hnchat.derma.chat.RichText = vgui.Create( "RichText", hnchat.derma.chat )
 		hnchat.derma.chat.RichText:Dock(FILL)
 		hnchat.derma.chat.RichText.Paint = function( self, w ,h )
 			draw.RoundedBox( 0, 0, 0, w, h, Color(22,22,22,196))
@@ -318,7 +209,7 @@ hook.Add( "Initialize", "hnchat", function()
 			end
 		end
 
-		hnchat.derma.chat.message = vgui.Create( "DPanel", hnchat.derma.chatpanel )
+		hnchat.derma.chat.message = vgui.Create( "DPanel", hnchat.derma.chat )
 		hnchat.derma.chat.message:Dock(BOTTOM)
 		local w,h = hnchat.derma.chat.message:GetSize()
 		hnchat.derma.chat.message:SetSize(w,14)
@@ -461,707 +352,20 @@ hook.Add( "Initialize", "hnchat", function()
 			menu:Open()
 		end
 
-		hnchat.derma.chat.emojibase = vgui.Create( "DPanel", hnchat.derma.chat.message )
-		hnchat.derma.chat.emojibase:Dock(RIGHT)
-		hnchat.derma.chat.emojibase.Paint = function() return false end
-
-		hnchat.derma.chat.emojibase.steam = vgui.Create( "DButton", hnchat.derma.chat.emojibase )
-		hnchat.derma.chat.emojibase.steam:Dock(LEFT)
-		hnchat.derma.chat.emojibase.steam:SetSize(24,16)
-
-		hnchat.derma.chat.emojibase.silk = vgui.Create( "DButton", hnchat.derma.chat.emojibase )
-		hnchat.derma.chat.emojibase.silk:Dock(FILL)
-		hnchat.derma.chat.emojibase.silk:SetSize(24,16)
-
-		hnchat.derma.chat.emojibase.color = vgui.Create( "DButton", hnchat.derma.chat.emojibase )
-		hnchat.derma.chat.emojibase.color:Dock(RIGHT)
-		hnchat.derma.chat.emojibase.color:SetSize(24,16)
-
-	hnchat.derma.dms = hnchat.derma.dms or {}
-		hnchat.derma.dms.tabs = vgui.Create( "DPropertySheet", hnchat.derma.dmpanel )
-		hnchat.derma.dms.tabs:Dock(FILL)
-		hnchat.derma.dms.tabs:SetFadeTime(0)
-		hnchat.derma.dms.tabs:SetPadding(0)
-		hnchat.derma.dms.tabs.Paint = function() end
-		hnchat.derma.dms.tabs.CloseTab = function( self, tab, bRemovePanelToo )
-				for k, v in next, self.Items do
-					if ( v.Tab != tab ) then continue end
-					table.remove( self.Items, k )
-				end
-				for k, v in next, self.tabScroller.Panels do
-					if ( v != tab ) then continue end
-					table.remove( self.tabScroller.Panels, k )
-				end
-
-				self.tabScroller:InvalidateLayout( true )
-
-				if ( tab == self:GetActiveTab() ) then
-					self.m_pActiveTab = self.Items[#self.Items] ~= nil and self.Items[#self.Items].Tab or nil
-				end
-
-				local pnl = tab:GetPanel()
-
-				if ( bRemovePanelToo ) then
-					pnl:Remove()
-				end
-
-				tab:Remove()
-
-				self:InvalidateLayout( true )
-
-				return pnl
+	--[[local files, dir = file.Find( "hnchat/modules/*", "LUA" )
+	for k, v in next, files do
+		local name = string.gsub( v, "%plua", "" )
+		hnchat.derma[name] = include("hnchat/modules/" .. v)
+		if name == "config" or name == "dms" or name == "lua" then
+			table.remove( files, k )
 		end
-		hnchat.derma.dms.tabs.tabs = {}
-
-		hnchat.derma.dms.topbar = vgui.Create( "DPanel", hnchat.derma.dmpanel )
-		hnchat.derma.dms.topbar:Dock(TOP)
-		hnchat.derma.dms.topbar:DockPadding(1,1,1,1)
-
-		hnchat.derma.dms.tabs.tabScroller:SetParent(hnchat.derma.dms.topbar)
-		hnchat.derma.dms.tabs.tabScroller.Paint = function( self, w, h )
-			draw.RoundedBox( 3, 0, 0, w, h, Color(234,234,234,255) )
-		end
-		hnchat.derma.dms.tabs.tabScroller:Dock(FILL)
-		hnchat.derma.dms.tabs.tabScroller:SetOverlap(-4)
-
-		hnchat.derma.dms.newbutton = vgui.Create( "DButton", hnchat.derma.dms.topbar )
-		hnchat.derma.dms.newbutton:SetSize(122,22)
-		hnchat.derma.dms.newbutton:Dock(LEFT)
-		hnchat.derma.dms.newbutton:SetText("New discussion with...")
-		hnchat.derma.dms.newbutton.DoClick = function(self)
-			local plys = player.GetAll()
-			table.sort( plys, function(a,b) return a:UndecorateNick():Trim():lower() < b:UndecorateNick():Trim():lower() end)
-			local menu = DermaMenu()
-			for k, v in pairs(plys) do
-				if not hnchat.derma.dms.tabs.tabs[v:SteamID()] then
-					menu:AddOption( v:UndecorateNick():Trim(), function()
-						hnchat.addDM(v)
-					end ):SetIcon((v:GetFriendStatus()=="friend" and "icon16/user_green.png"))
-				end
-			end
-			menu.Think = function(self)
-				if input.IsKeyDown(KEY_ESCAPE) then
-					self:Remove()
-				end
-			end
-			menu:Open()
-		end
-
-		hnchat.derma.dms.TextEntry = vgui.Create( "DTextEntry", hnchat.derma.dmpanel )
-		hnchat.derma.dms.TextEntry:Dock(BOTTOM)
-		local w,h = hnchat.derma.dms.TextEntry:GetSize()
-		hnchat.derma.dms.TextEntry:SetSize(w,14)
-		hnchat.derma.dms.TextEntry.OldThink = hnchat.derma.dms.TextEntry.Think
-		hnchat.derma.dms.TextEntry.Paint = function( self, w ,h )
-			local col = self.HistoryPos == 0 and color_white or Color( 241, 201, 151, 255 )
-			draw.RoundedBox( 0, 0, 0, w, h, col )
-			self:DrawTextEntryText( Color( 0, 0, 0, 255 ), Color( 24, 131, 255, 255 ), Color( 0, 0, 0, 255 ))
-			return false
-		end
-		hnchat.derma.dms.TextEntry.OnKeyCodeTyped = function( self, key )
-			if key == KEY_ENTER then
-				local str = self:GetValue():Trim()
-
-				self:AddHistory(str)
-				self:SetText("")
-				--hnchat.closeChatbox()
-				if str ~= "" and hnchat.derma.dms.tabs:GetActiveTab() ~= nil then
-					dmPlayer( hnchat.derma.dms.tabs:GetActiveTab():GetPanel().Player, str )
-				end
-
-				self.HistoryPos = 0
-				return true
-			elseif key == KEY_UP then
-				self.HistoryPos = self.HistoryPos - 1
-				self:UpdateFromHistory()
-				return true
-			elseif key == KEY_DOWN then
-				self.HistoryPos = self.HistoryPos + 1
-				self:UpdateFromHistory()
-				return true
-			end
-		end
-
-	hnchat.derma.lua = hnchat.derma.lua or {}
-		local modes = {
-			Glua = "glua",
-			Lua = "lua",
-			Javscript = "javascript",
-			Json = "json",
-			Text = "text",
-			["Plain text"] = "plain_text",
-			Sql = "sql",
-			Xml = "xml",
-			Ada = "ada",
-			["Assembly x86"] = "assembly_x86",
-			Autohotkey = "autohotkey",
-			Batchfile = "batchfile",
-			C9search = "c9search",
-			["C cpp"] = "c_cpp",
-			Csharp = "csharp",
-			Css = "css",
-			Diff = "diff",
-			Html = "html",
-			["Html ruby"] = "html_ruby",
-			Ini = "ini",
-			Java = "java",
-			Jsoniq = "jsoniq",
-			Jsp = "jsp",
-			Luapage = "luapage",
-			Lucene = "lucene",
-			Makefile = "makefile",
-			Markdown = "markdown",
-			Mysql = "mysql",
-			Perl = "perl",
-			Pgsql = "pgsql",
-			Php = "php",
-			Powershell = "powershell",
-			Properties = "properties",
-			Python = "python",
-			Rhtml = "rhtml",
-			Ruby = "ruby",
-			Sh = "sh",
-			Snippets = "snippets",
-			Svg = "svg",
-			Vbscript = "vbscript",
-		}
-		local themes = {
-			Ambiance = "ambiance",
-			Chaos = "chaos",
-			Chrome = "chrome",
-			Clouds = "clouds",
-			["Clouds midnight"] = "clouds_midnight",
-			Cobalt = "cobalt",
-			["Crimson editor"] = "crimson_editor",
-			Dawn = "dawn",
-			Dreamweaver = "dreamweaver",
-			Eclipse = "eclipse",
-			Github = "github",
-			["Idle fingers"] = "idle_fingers",
-			Iplastic = "iplastic",
-			Katzenmilch = "katzenmilch",
-			["Kr theme"] = "kr_theme",
-			Kuroir = "kuroir",
-			Merbivore = "merbivore",
-			["Merbivore soft"] = "merbivore_soft",
-			["Mono industrial"] = "mono_industrial",
-			Monokai = "monokai",
-			["Pastel on dark"] = "pastel_on_dark",
-			["Solarized dark"] = "solarized_dark",
-			["Solarized light"] = "solarized_light",
-			Sqlserver = "sqlserver",
-			Terminal = "terminal",
-			Textmate = "textmate",
-			Tomorrow = "tomorrow",
-			["Tomorrow night"] = "tomorrow_night",
-			["Tomorrow night blue"] = "tomorrow_night_blue",
-			["Tomorrow night bright"] = "tomorrow_night_bright",
-			["Tomorrow night eighties"] = "tomorrow_night_eighties",
-			Twilight = "twilight",
-			["Vibrant ink"] = "vibrant_ink",
-			Xcode = "xcode",
-		}
-
-		local ezdraw = function(self,w,h)
-			col = self:IsHovered() and Color(222,222,222) or Color(234,234,234)
-			textcol = self:IsHovered() and Color(96,42,180) or Color(81,81,81)
-			textcol = self:IsDown() and color_white or textcol
-
-			draw.RoundedBox( 0, 0, 0, w, h, col)
-			draw.SimpleText( self:GetText(), "DermaDefault", w/2, h/2, textcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-			return true
-		end
-
-		hnchat.derma.lua.topbar = vgui.Create( "DHorizontalScroller", hnchat.derma.luapanel )
-		hnchat.derma.lua.topbar:Dock(TOP)
-		hnchat.derma.lua.topbar.Paint = function( self, w, h )
-			draw.RoundedBox( 3, 0, 0, w, h, Color(234,234,234,255))
-		end
-		hnchat.derma.lua.topbar:SetOverlap(0)
-
-		hnchat.derma.lua.topbar.menu = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.menu:SetIcon("icon16/application_form_edit.png")
-		hnchat.derma.lua.topbar.menu:SetText("Menu")
-		hnchat.derma.lua.topbar.menu:Dock(LEFT)
-		hnchat.derma.lua.topbar.menu.Paint = ezdraw
-		hnchat.derma.lua.topbar.menu.DoClick = function(self)
-			local menu = DermaMenu()
-			menu:AddOption( "Configure", function()
-				hnchat.derma.lua.html:Call([[editor.showSettingsMenu()]])
-			end)
-			menu:AddOption( "Toggle left panel", function()
-				hnchat.derma.lua.leftbar:SetVisible(not hnchat.derma.lua.leftbar:IsVisible())
-				hnchat.derma.lua.html:Dock(FILL) -- TODO: get that shit to auto do this
-			end)
-			menu:AddOption( "Show Help", function()
-				hnchat.derma.lua.html:Call([[editor.showKeyboardShortcuts()]])
-			end)
-
-			local fix = menu:AddSubMenu("Fix")
-				fix:AddOption( "Reopen URL", function()
-					hnchat.derma.lua.html:OpenURL("http://metastruct.github.io/lua_editor/")
-				end)
-				fix:AddOption( "Reload", function()
-					hnchat.derma.lua.html:Refresh()
-				end)
-				fix:AddOption( "Reload (empty cache)", function()
-					hnchat.derma.lua.html:Refresh(true)
-				end)
-			local mode = menu:AddSubMenu("Mode")
-				for k, v in pairs(modes) do
-					mode:AddOption(k, function()
-						hnchat.derma.lua.html:Call([[editor.getSession().setMode("ace/mode/]]..v..[[");]])
-					end)
-				end
-			local theme = menu:AddSubMenu("Theme")
-				for k, v in SortedPairs(themes) do
-					theme:AddOption(k, function()
-						hnchat.derma.lua.html:Call([[editor.setTheme("ace/theme/]]..v..[[");]])
-					end)
-				end
-			local fontsize = menu:AddSubMenu("Font Size")
-				for i=9, 24 do
-					fontsize:AddOption( i.." px", function()
-						hnchat.derma.lua.html:Call("editor.setFontSize("..i..")")
-					end)
-				end
-
-			menu:AddOption( "Legacy LuaDev", function()
-				--hnchat.derma.lua.html:Call([[editor.showSettingsMenu()]])
-			end)
-			menu:AddOption( "Performance", function()
-				--hnchat.derma.lua.html:Call([[editor.showSettingsMenu()]])
-			end)
-			menu:AddOption( "1 fps refresh", function()
-				--hnchat.derma.lua.html:Call([[editor.showSettingsMenu()]])
-			end)
-			menu:Open()
-		end
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.menu)
-
-		local spacer = vgui.Create("DPanel", hnchat.derma.lua.topbar)
-			spacer:SetSize(32,24)
-			spacer:Dock(LEFT)
-			spacer.Paint = function(self) return false end
-			hnchat.derma.lua.topbar:AddPanel(spacer)
-
-		hnchat.derma.lua.topbar.run = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.run:SetIcon("icon16/cog_go.png")
-		hnchat.derma.lua.topbar.run:SetText("Run")
-		hnchat.derma.lua.topbar.run:SetSize(55,24)
-		hnchat.derma.lua.topbar.run:Dock(LEFT)
-		hnchat.derma.lua.topbar.run.Paint = function(self, w, h)
-			col = self:IsHovered() and Color(222,222,222) or Color(190,243,188)
-			textcol = self:IsHovered() and Color(96,42,180) or Color(81,81,81)
-			textcol = self:IsDown() and color_white or textcol
-
-			draw.RoundedBox( 0, 0, 0, w, h, col)
-			draw.SimpleText( self:GetText(), "DermaDefault", w/2, h/2, textcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-			return true
-		end
-		hnchat.derma.lua.topbar.run.DoClick = function(self)
-			--print(hnchat.derma.lua.html:Call([[editor.getValue()]]))
-		end
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.run)
-
-		hnchat.derma.lua.topbar.server = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.server:SetIcon("icon16/server.png")
-		hnchat.derma.lua.topbar.server:SetText("Server")
-		hnchat.derma.lua.topbar.server:SetSize(68,24)
-		hnchat.derma.lua.topbar.server:Dock(LEFT)
-		hnchat.derma.lua.topbar.server.Paint = ezdraw
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.server)
-
-		hnchat.derma.lua.topbar.clients = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.clients:SetIcon("icon16/group.png")
-		hnchat.derma.lua.topbar.clients:SetText("Clients")
-		hnchat.derma.lua.topbar.clients:SetSize(68,24)
-		hnchat.derma.lua.topbar.clients:Dock(LEFT)
-		hnchat.derma.lua.topbar.clients.Paint = ezdraw
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.clients)
-
-		hnchat.derma.lua.topbar.shared = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.shared:SetIcon("icon16/world.png")
-		hnchat.derma.lua.topbar.shared:SetText("Shared")
-		hnchat.derma.lua.topbar.shared:SetSize(70,24)
-		hnchat.derma.lua.topbar.shared:Dock(LEFT)
-		hnchat.derma.lua.topbar.shared.Paint = ezdraw
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.shared)
-		
-		local spacer = vgui.Create("DPanel", hnchat.derma.lua.topbar)
-			spacer:SetSize(16,24)
-			spacer:Dock(LEFT)
-			spacer.Paint = function() return false end
-			hnchat.derma.lua.topbar:AddPanel(spacer)
-
-		hnchat.derma.lua.topbar.player = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.player:SetIcon("icon16/user.png")
-		hnchat.derma.lua.topbar.player:SetText("Player")
-		hnchat.derma.lua.topbar.player:SetSize(66,24)
-		hnchat.derma.lua.topbar.player:Dock(LEFT)
-		hnchat.derma.lua.topbar.player.Paint = ezdraw
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.player)
-
-		hnchat.derma.lua.topbar.devs = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.devs:SetIcon("icon16/user_gray.png")
-		hnchat.derma.lua.topbar.devs:SetSize(60,24)
-		hnchat.derma.lua.topbar.devs:SetText("Devs")
-		hnchat.derma.lua.topbar.devs:Dock(LEFT)
-		hnchat.derma.lua.topbar.devs.Paint = ezdraw
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.devs)
-
-		hnchat.derma.lua.topbar.near = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.near:SetIcon("icon16/group.png")
-		hnchat.derma.lua.topbar.near:SetText("Nearby")
-		hnchat.derma.lua.topbar.near:SetSize(71,24)
-		hnchat.derma.lua.topbar.near:Dock(LEFT)
-		hnchat.derma.lua.topbar.near.Paint = ezdraw
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.near)
-		
-		local spacer = vgui.Create("DPanel", hnchat.derma.lua.topbar)
-			spacer:SetSize(16,24)
-			spacer:Dock(LEFT)
-			spacer.Paint = function() return false end
-			hnchat.derma.lua.topbar:AddPanel(spacer)
-
-		hnchat.derma.lua.topbar.servers = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.servers:SetIcon("icon16/server_lightning.png")
-		hnchat.derma.lua.topbar.servers:SetText("Servers")
-		hnchat.derma.lua.topbar.servers:Dock(LEFT)
-		hnchat.derma.lua.topbar.servers:SetSize(85,24)
-		hnchat.derma.lua.topbar.servers:SetEnabled(false)
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.servers)
-
-		hnchat.derma.lua.topbar.javascript = vgui.Create( "DButton", hnchat.derma.lua.topbar )
-		hnchat.derma.lua.topbar.javascript:SetIcon("icon16/script_gear.png")
-		hnchat.derma.lua.topbar.javascript:SetText("Javascript")
-		hnchat.derma.lua.topbar.javascript:Dock(LEFT)
-		hnchat.derma.lua.topbar.javascript:SetSize(85,24)
-		hnchat.derma.lua.topbar.javascript:SetEnabled(false)
-		hnchat.derma.lua.topbar:AddPanel(hnchat.derma.lua.topbar.javascript)
-
-
-		hnchat.derma.lua.leftbar = vgui.Create( "DScrollPanel", hnchat.derma.luapanel )
-		hnchat.derma.lua.leftbar:Dock(LEFT)
-		hnchat.derma.lua.leftbar.Paint = function( self, w, h )
-			draw.RoundedBox( 3, 0, 0, w, h, Color(234,234,234,255))
-		end
-
-		hnchat.derma.lua.leftbar.save = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
-		hnchat.derma.lua.leftbar.save:SetText("Save")
-		hnchat.derma.lua.leftbar.save:SetIcon("icon16/script_save.png")
-		hnchat.derma.lua.leftbar.save.Paint = ezdraw
-		hnchat.derma.lua.leftbar.save:Dock(TOP)
-
-		hnchat.derma.lua.leftbar.load = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
-		hnchat.derma.lua.leftbar.load:SetText("Load")
-		hnchat.derma.lua.leftbar.load:SetIcon("icon16/script_edit.png")
-		hnchat.derma.lua.leftbar.load.Paint = ezdraw
-		hnchat.derma.lua.leftbar.load:Dock(TOP)
-
-		hnchat.derma.lua.leftbar.open = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
-		hnchat.derma.lua.leftbar.open:SetText("Open")
-		hnchat.derma.lua.leftbar.open:SetIcon("icon16/folder_explore.png")
-		hnchat.derma.lua.leftbar.open.Paint = ezdraw
-		hnchat.derma.lua.leftbar.open:Dock(TOP)
-
-		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
-			spacer:SetSize(74,8)
-			spacer:Dock(TOP)
-			spacer.Paint = function() return false end
-
-		hnchat.derma.lua.leftbar.loadurl = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
-		hnchat.derma.lua.leftbar.loadurl:SetText("Load URL")
-		hnchat.derma.lua.leftbar.loadurl:SetIcon("icon16/page_link.png")
-		hnchat.derma.lua.leftbar.loadurl.DoClick = function(self)
-			Derma_StringRequest("Load URL","Paste in URL, pastebin and hastebin links are automatically in raw form.","",function(txt)
-				if not txt:find("com/raw") then
-					print("not raw")
-				else
-					print("fuckin raw")
-				end
-			end)
-		end
-		hnchat.derma.lua.leftbar.loadurl.Paint = ezdraw
-		hnchat.derma.lua.leftbar.loadurl:Dock(TOP)
-
-		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
-			spacer:SetSize(74,8)
-			spacer:Dock(TOP)
-			spacer.Paint = function() return false end
-
-		hnchat.derma.lua.leftbar.pastebin = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
-		hnchat.derma.lua.leftbar.pastebin:SetText("pastebin")
-		hnchat.derma.lua.leftbar.pastebin:SetIcon("icon16/page_link.png")
-		hnchat.derma.lua.leftbar.pastebin.Paint = ezdraw
-		hnchat.derma.lua.leftbar.pastebin:Dock(TOP)
-
-		hnchat.derma.lua.leftbar.send = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
-		hnchat.derma.lua.leftbar.send:SetText("Send")
-		hnchat.derma.lua.leftbar.send:SetIcon("icon16/email_go.png")
-		hnchat.derma.lua.leftbar.send.Paint = ezdraw
-		hnchat.derma.lua.leftbar.send:Dock(TOP)
-
-		hnchat.derma.lua.leftbar.receive = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
-		hnchat.derma.lua.leftbar.receive:SetText("Receive")
-		hnchat.derma.lua.leftbar.receive:SetIcon("icon16/email_open.png")
-		hnchat.derma.lua.leftbar.receive.Paint = ezdraw
-		hnchat.derma.lua.leftbar.receive:Dock(TOP)
-
-		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
-			spacer:SetSize(74,8)
-			spacer:Dock(TOP)
-			spacer.Paint = function() return false end
-
-		hnchat.derma.lua.leftbar.beauty = vgui.Create( "DButton", hnchat.derma.lua.leftbar )
-		hnchat.derma.lua.leftbar.beauty:SetText("Beautify")
-		hnchat.derma.lua.leftbar.beauty:SetIcon("icon16/font.png")
-		hnchat.derma.lua.leftbar.beauty.Paint = ezdraw
-		hnchat.derma.lua.leftbar.beauty:Dock(TOP)
-
-		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
-			spacer:SetSize(74,8)
-			spacer:Dock(TOP)
-			spacer.Paint = function() return false end
-
-		-- send as shit here
-
-		local spacer = vgui.Create("DPanel", hnchat.derma.lua.leftbar)
-			spacer:SetSize(74,8)
-			spacer:Dock(TOP)
-			spacer.Paint = function() return false end
-
-		-- easy lua combo box here
-
-		hnchat.derma.lua.prop = vgui.Create( "DPropertySheet", hnchat.derma.luapanel )
-		hnchat.derma.lua.prop:Dock(FILL)
-		hnchat.derma.lua.prop.Paint = function() return false end
-
-		-- propertysheet (done)
-		-- drag base (might be built into property sheet's tabs)
-		-- then tabs
-
-		--[[hnchat.derma.lua.html = vgui.Create( "DHTML", hnchat.derma.luapanel )
-		hnchat.derma.lua.html:Dock(FILL)
-		hnchat.derma.lua.html:OpenURL("http://metastruct.github.io/lua_editor/")
-		hnchat.derma.lua.html:SetAllowLua(true)]]
-
-		--[[
-			[LEDITOR] InternalSnippetsUpdate -> function () { [native code] }
-			[LEDITOR] OnCode -> function () { [native code] }
-			[LEDITOR] OnLog -> function () { [native code] }
-			[LEDITOR] OnReady -> function () { [native code] }
-			[LEDITOR] OnSelection -> function () { [native code] }
-			[LEDITOR] oncontextmenu -> function () { [native code] }
-			[LEDITOR] onmousedown -> function () { [native code] }
-
-			 function PANEL:GetCode( sessionName )
-			 	return self:GetHasLoaded() and self:GetSession( sessionName ) or ""
-			 end
-		]]
-
-	hnchat.derma.config = hnchat.derma.config or {}
-		hnchat.derma.config.CList = vgui.Create( "DCategoryList", hnchat.derma.configpanel )
-		hnchat.derma.config.CList:Dock(FILL)
-
-		hnchat.derma.config.chat = hnchat.derma.config.CList:Add("Chat")
-			hnchat.derma.config.chat:SetExpanded(false)
-			hnchat.derma.config.chat:SetPadding(0)
-
-			hnchat.derma.config.chat.list = vgui.Create( "DPanelList", hnchat.derma.config.chat )
-			hnchat.derma.config.chat.list:SetSpacing(7)
-			hnchat.derma.config.chat.list:SetPadding(5)
-			hnchat.derma.config.chat.list:EnableHorizontal(false)
-			hnchat.derma.config.chat.list:EnableVerticalScrollbar(true)
-			hnchat.derma.config.chat:SetContents(hnchat.derma.config.chat.list)
-
-			hnchat.derma.config.chat.time_stamps = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.chat.time_stamps:SetText("Timestamps (chat history)")
-			hnchat.derma.config.chat.time_stamps:SetConVar(hnchat_timestamps:GetName())
-			hnchat.derma.config.chat.time_stamps:SetValue(hnchat_timestamps:GetBool())
-			hnchat.derma.config.chat.time_stamps:SizeToContents()
-			hnchat.derma.config.chat.time_stamps:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.chat.time_stamps:SetToolTip("CVar: "..hnchat_timestamps:GetName())
-			hnchat.derma.config.chat.list:AddItem(hnchat.derma.config.chat.time_stamps)
-
-			hnchat.derma.config.chat.time_24h = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.chat.time_24h:SetText("24 Hour Timestamps")
-			hnchat.derma.config.chat.time_24h:SetConVar(hnchat_timestamps_24hr:GetName())
-			hnchat.derma.config.chat.time_24h:SetValue(hnchat_timestamps_24hr:GetBool())
-			hnchat.derma.config.chat.time_24h:SizeToContents()
-			hnchat.derma.config.chat.time_24h:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.chat.time_24h:SetToolTip("CVar: "..hnchat_timestamps_24hr:GetName())
-			hnchat.derma.config.chat.list:AddItem(hnchat.derma.config.chat.time_24h)
-
-			hnchat.derma.config.chat.greentext = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.chat.greentext:SetText("> Green text")
-			hnchat.derma.config.chat.greentext:SetConVar(hnchat_greentext:GetName())
-			hnchat.derma.config.chat.greentext:SetValue(hnchat_greentext:GetBool())
-			hnchat.derma.config.chat.greentext:SizeToContents()
-			hnchat.derma.config.chat.greentext:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.chat.greentext:SetToolTip("CVar: "..hnchat_greentext:GetName())
-			hnchat.derma.config.chat.list:AddItem(hnchat.derma.config.chat.greentext)
-
-			hnchat.derma.config.chat.highlight = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.chat.highlight:SetText("Highlight messages that mention you")
-			hnchat.derma.config.chat.highlight:SetConVar(hnchat_highlight:GetName())
-			hnchat.derma.config.chat.highlight:SetValue(hnchat_highlight:GetBool())
-			hnchat.derma.config.chat.highlight:SizeToContents()
-			hnchat.derma.config.chat.highlight:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.chat.highlight:SetToolTip("CVar: "..hnchat_highlight:GetName())
-			hnchat.derma.config.chat.list:AddItem(hnchat.derma.config.chat.highlight)
-		--[[hnchat.derma.config.chathud = hnchat.derma.config.CList:Add("Chat HUD")
-			hnchat.derma.config.chathud:SetExpanded(false)
-			hnchat.derma.config.chathud:SetPadding(0)]]
-		hnchat.derma.config.audio = hnchat.derma.config.CList:Add("Audio")
-			hnchat.derma.config.audio:SetExpanded(false)
-			hnchat.derma.config.audio:SetPadding(0)
-
-			hnchat.derma.config.audio.list = vgui.Create( "DPanelList", hnchat.derma.config.audio )
-			hnchat.derma.config.audio.list:SetSpacing(7)
-			hnchat.derma.config.audio.list:SetPadding(5)
-			hnchat.derma.config.audio.list:EnableHorizontal(false)
-			hnchat.derma.config.audio.list:EnableVerticalScrollbar(true)
-			hnchat.derma.config.audio:SetContents(hnchat.derma.config.audio.list)
-
-			hnchat.derma.config.audio.outmute = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.audio.outmute:SetText("Out of game mute")
-			hnchat.derma.config.audio.outmute:SetConVar("snd_mute_losefocus")
-			hnchat.derma.config.audio.outmute:SetValue(GetConVar("snd_mute_losefocus"):GetBool())
-			hnchat.derma.config.audio.outmute:SizeToContents()
-			hnchat.derma.config.audio.outmute:SetTextColor(Color( 3, 3, 3, 255 ))
-			hnchat.derma.config.audio.outmute:SetToolTip("Mute in game sounds while tabbed out of game")
-			hnchat.derma.config.audio.list:AddItem(hnchat.derma.config.audio.outmute)
-		--[[hnchat.derma.config.graphics = hnchat.derma.config.CList:Add("Performance / Graphics")
-			hnchat.derma.config.graphics:SetExpanded(false)
-			hnchat.derma.config.graphics:SetPadding(0)]]
-		hnchat.derma.config.dms = hnchat.derma.config.CList:Add( "PM" )
-			hnchat.derma.config.dms:SetExpanded(false)
-			hnchat.derma.config.dms:SetPadding(0)
-
-			hnchat.derma.config.dms.list = vgui.Create( "DPanelList", hnchat.derma.config.dms )
-			hnchat.derma.config.dms.list:SetSpacing(7)
-			hnchat.derma.config.dms.list:SetPadding(5)
-			hnchat.derma.config.dms.list:EnableHorizontal(false)
-			hnchat.derma.config.dms.list:EnableVerticalScrollbar(true)
-			hnchat.derma.config.dms:SetContents(hnchat.derma.config.dms.list)
-
-			hnchat.derma.config.dms.disable = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.dms.disable:SetText("Disable")
-			hnchat.derma.config.dms.disable:SetConVar(hnchat_pm_disable:GetName())
-			hnchat.derma.config.dms.disable:SetValue(hnchat_pm_disable:GetBool())
-			hnchat.derma.config.dms.disable:SizeToContents()
-			hnchat.derma.config.dms.disable:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.dms.disable:SetToolTip("CVar: "..hnchat_pm_disable:GetName())
-			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.disable)
-
-			hnchat.derma.config.dms.friendsonly = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.dms.friendsonly:SetText("Friends only")
-			hnchat.derma.config.dms.friendsonly:SetConVar(hnchat_pm_friendsonly:GetName())
-			hnchat.derma.config.dms.friendsonly:SetValue(hnchat_pm_friendsonly:GetBool())
-			hnchat.derma.config.dms.friendsonly:SizeToContents()
-			hnchat.derma.config.dms.friendsonly:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.dms.friendsonly:SetToolTip("CVar: "..hnchat_pm_friendsonly:GetName())
-			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.friendsonly)
-
-			-- spacer like in dmenu
-
-			hnchat.derma.config.dms.pmchat = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.dms.pmchat:SetText("PM in chat")
-			hnchat.derma.config.dms.pmchat:SetConVar(pm_hud:GetName())
-			hnchat.derma.config.dms.pmchat:SetValue(pm_hud:GetBool())
-			hnchat.derma.config.dms.pmchat:SizeToContents()
-			hnchat.derma.config.dms.pmchat:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.dms.pmchat:SetToolTip("CVar: "..pm_hud:GetName())
-			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.pmchat)
-
-			-- spacer like in dmenu
-
-			hnchat.derma.config.dms.notiftext = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.dms.notiftext:SetText("Notify Text")
-			hnchat.derma.config.dms.notiftext:SetConVar(pm_hud_notify:GetName())
-			hnchat.derma.config.dms.notiftext:SetValue(pm_hud_notify:GetBool())
-			hnchat.derma.config.dms.notiftext:SizeToContents()
-			hnchat.derma.config.dms.notiftext:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.dms.notiftext:SetToolTip("CVar: "..pm_hud_notify:GetName())
-			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.notiftext)
-
-			hnchat.derma.config.dms.notifsound = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.dms.notifsound:SetText("Notify Sound")
-			hnchat.derma.config.dms.notifsound:SetConVar(pm_hud_notify_sound:GetName())
-			hnchat.derma.config.dms.notifsound:SetValue(pm_hud_notify_sound:GetBool())
-			hnchat.derma.config.dms.notifsound:SizeToContents()
-			hnchat.derma.config.dms.notifsound:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.dms.notifsound:SetToolTip("CVar: "..pm_hud_notify_sound:GetName())
-			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.notifsound)
-
-			-- spacer
-
-			hnchat.derma.config.dms.pmmode = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.dms.pmmode:SetText("Team chat -> PM")
-			hnchat.derma.config.dms.pmmode:SetConVar(hnchat_pmmode:GetName())
-			hnchat.derma.config.dms.pmmode:SetValue(hnchat_pmmode:GetBool())
-			hnchat.derma.config.dms.pmmode:SizeToContents()
-			hnchat.derma.config.dms.pmmode:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.dms.pmmode:SetToolTip("CVar: "..hnchat_pmmode:GetName())
-			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.pmmode)
-
-			hnchat.derma.config.dms.chatsounds = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.dms.chatsounds:SetText("Chatsounds")
-			hnchat.derma.config.dms.chatsounds:SetConVar(pm_chatsounds:GetName())
-			hnchat.derma.config.dms.chatsounds:SetValue(pm_chatsounds:GetBool())
-			hnchat.derma.config.dms.chatsounds:SizeToContents()
-			hnchat.derma.config.dms.chatsounds:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.dms.chatsounds:SetToolTip("CVar: "..pm_chatsounds:GetName())
-			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.chatsounds)
-
-			-- spacer
-
-			hnchat.derma.config.dms.windowg = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.dms.windowg:SetText("(1) Highlight GMod Window on PM")
-			hnchat.derma.config.dms.windowg:SetConVar(pm_notify_window:GetName())
-			hnchat.derma.config.dms.windowg:SetValue(1)
-			hnchat.derma.config.dms.windowg:SizeToContents()
-			hnchat.derma.config.dms.windowg:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.dms.windowg:SetToolTip("CVar: "..pm_notify_window:GetName())
-			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.windowg)
-
-			hnchat.derma.config.dms.windowf = vgui.Create("DCheckBoxLabel")
-			hnchat.derma.config.dms.windowf:SetText("(2) Highlight GMod Window on PM (Friends only)")
-			hnchat.derma.config.dms.windowf:SetConVar(pm_notify_window:GetName())
-			hnchat.derma.config.dms.windowf:SetValue(2)
-			hnchat.derma.config.dms.windowf:SizeToContents()
-			hnchat.derma.config.dms.windowf:SetTextColor(Color(3,3,3))
-			hnchat.derma.config.dms.windowf:SetToolTip("CVar: "..pm_notify_window:GetName())
-			hnchat.derma.config.dms.list:AddItem(hnchat.derma.config.dms.windowf)
-		hnchat.derma.config.game = hnchat.derma.config.CList:Add("Game")
-			hnchat.derma.config.game:SetExpanded(false)
-			hnchat.derma.config.game:SetPadding(0)
-
-			hnchat.derma.config.game.list = vgui.Create( "DPanelList", hnchat.derma.config.game )
-			hnchat.derma.config.game.list:SetSpacing(7)
-			hnchat.derma.config.game.list:SetPadding(5)
-			hnchat.derma.config.game.list:EnableHorizontal(false)
-			hnchat.derma.config.game.list:EnableVerticalScrollbar(true)
-			hnchat.derma.config.game:SetContents(hnchat.derma.config.game.list)
-
-			hnchat.derma.config.game.netgraph = {}
-			for i=1, 4 do
-				hnchat.derma.config.game.netgraph[i] = vgui.Create("DCheckBoxLabel")
-				hnchat.derma.config.game.netgraph[i]:SetText("Net Graph "..i)
-				hnchat.derma.config.game.netgraph[i]:SetValue(i)
-				hnchat.derma.config.game.netgraph[i]:SetConVar("net_graph")
-				hnchat.derma.config.game.netgraph[i]:SizeToContents()
-				hnchat.derma.config.game.netgraph[i]:SetTextColor(Color(3,3,3))
-				hnchat.derma.config.game.netgraph[i]:SetToolTip( "CVar: net_graph "..i )
-				hnchat.derma.config.game.list:AddItem(hnchat.derma.config.game.netgraph[i])
-			end
-		--[[hnchat.derma.config.media = hnchat.derma.config.CList:Add( "Media Player" )
-			hnchat.derma.config.media:SetExpanded(false)
-			hnchat.derma.config.media:SetPadding(0)]]
- 
-	hnchat.derma.tabs:AddSheet( "Global", hnchat.derma.chatpanel, "icon16/comments.png", false, false, "Chat" )
-	hnchat.derma.tabs:AddSheet( "PM", hnchat.derma.dmpanel, "icon16/group.png", false, false, "PM" )
+	end]]
+	hnchat.derma.dms = include("hnchat/modules/dms.lua")
+	hnchat.derma.lua = include("hnchat/modules/lua.lua")
+	hnchat.derma.config = include("hnchat/modules/config.lua")
+
+	hnchat.derma.tabs:AddSheet( "Global", hnchat.derma.chat, "icon16/comments.png", false, false, "Chat" )
+	hnchat.derma.tabs:AddSheet( "PM", hnchat.derma.dms, "icon16/group.png", false, false, "PM" )
 	local spacer = hnchat.derma.tabs:AddSheet( "", vgui.Create( "DPanel" ) )
 		spacer.Tab.Paint = function(self) return false end
 		spacer.Tab:SetEnabled(false)
@@ -1170,8 +374,13 @@ hook.Add( "Initialize", "hnchat", function()
 		spacer2.Tab.Paint = function(self) return false end
 		spacer2.Tab:SetEnabled(false)
 		spacer2.Tab:SetCursor("arrow")
-	hnchat.derma.tabs:AddSheet( "Lua", hnchat.derma.luapanel, "icon16/page_edit.png", false, false, "Lua" )
-	hnchat.derma.tabs:AddSheet( "Settings", hnchat.derma.configpanel, "icon16/wrench_orange.png", false, false, "Config" )
+	hnchat.derma.tabs:AddSheet( "Lua", hnchat.derma.lua, "icon16/page_edit.png", false, false, "Lua" )
+	hnchat.derma.tabs:AddSheet( "Settings", hnchat.derma.config, "icon16/wrench_orange.png", false, false, "Config" )
+
+	--[[for k, v in next, files do
+		local name = string.gsub( v, "%plua", "" )
+		hnchat.derma.tabs:AddSheet( name, hnchat.derma[name], nil, false, false, name )
+	end]]
 
 	hnchat.derma.CloseButton = vgui.Create( "DButton", hnchat.derma.Frame )
 	hnchat.derma.CloseButton:SetSize( 42, 16 )
@@ -1280,29 +489,10 @@ hook.Add( "Initialize", "hnchat", function()
 		chat.AddText( Color(24,161,35), "(Local) ", ply, color_white, ": " .. txt )
 	end)
 
-	net.Receive("hnchat_dm_receive", function(len)
-		if hnchat_pm_disable:GetBool() then return end
-
-		local ply = net.ReadEntity()
-		local txt = net.ReadString()
-
-		if not hnchat.derma.dms.tabs.tabs[ply:SteamID()] then hnchat.addDM(ply) end
-
-		hnchat.AddText(hnchat.derma.dms.tabs.tabs[ply:SteamID()], ply, color_white, ": ", txt )
-		--if not hnchat.derma.dms.tabs:GetActiveTab():GetPanel():IsVisible() then
-			hnchat.derma.dms.tabs.tabs[ply:SteamID()].unread = true
-			if pm_hud_notify_sound:GetBool() then surface.PlaySound("friends/message.wav") end
-			if pm_hud_notify:GetBool() then chat.AddText(Color(200,100,100),"[[ ", color_white, "PM From ", ply, Color(200,100,100), " ]]") end
-		--end
-		if pm_notify_window:GetInt() ~= 0 then
-			--if ply:GetFriendStatus() == "friend" and pm_notify_window:GetInt() <= 2
-			if system.IsWindows() and not system.HasFocus() then system.FlashWindow() end
-		end
-	end)
-
 	hook.Add( "PlayerBindPress", "hnchat", function( ply, bind, pressed )
 		if bind:find("messagemode2") then
-			RunConsoleCommand("hnchat_open_lua")
+			RunConsoleCommand("hnchat_open")
+			hnchat.derma.chat.msgmode.curtype = 1
 			return true
 		elseif bind:find("messagemode") then
 			RunConsoleCommand("hnchat_open")
@@ -1313,23 +503,12 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.openChatbox("Global")
 		hnchat.derma.chat.TextEntry:RequestFocus()
 	end)
-	concommand.Add( "hnchat_open_config", function() -- opens config panel
-		hnchat.openChatbox("Settings")
-	end)
 	concommand.Add( "hnchat_open_local",function() -- opens chat in local
 		RunConsoleCommand("hnchat_open")
 		hnchat.derma.chat.msgmode.curtype = 2
 	end)
-	concommand.Add( "hnchat_open_lua",function() -- opens lua panel
-		hnchat.openChatbox("Lua")
-		--hnchat.derma.lua.html:RequestFocus()
-	end)
 	concommand.Add( "hnchat_open_mode",function()
 		-- idk what this does lol
-	end)
-	concommand.Add( "hnchat_open_pm",function() 
-		hnchat.openChatbox("PM")
-		hnchat.derma.dms.TextEntry:RequestFocus()
 	end)
 	concommand.Add( "hnchat_open_team",function() -- open chat in team
 		RunConsoleCommand("hnchat_open")
@@ -1360,7 +539,7 @@ hook.Add( "Initialize", "hnchat", function()
 
 		-- empty
 		hnchat = nil
-		chatgui = oldchatgui
+		chatgui = oldchatgui or nil
 		oldchatgui = nil
 	end
 
