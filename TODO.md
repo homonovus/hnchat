@@ -6,6 +6,8 @@
 * ~~not replace chat.addtext maybe... maybe~~ ~~make a appendinto function~~
 * add in ctrl+backspace support into TextEntry's
 * optimize if needed ????
+* hot reloading
+* rebuild chatbox
 
 # Global Chat
 * add in emoji picker, etc
