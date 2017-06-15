@@ -1,22 +1,23 @@
 # In General
-* ~~fix links not appearing properly in richtexts~~ it was the c func reading `//` as a comment; fixed
+* ~~fix links not appearing properly in richtexts~~
 * ~~finish adding in links to richtexts~~ highlight links only, not the whole line
 * ~~**make modular**~~ finish modularity
 * ~~frame dragging~~
 * ~~not replace chat.addtext maybe... maybe~~ ~~make a appendinto function~~
-* add in ctrl+backspace support into TextEntry's
+* ctrl+backspace support into TextEntry's
 * optimize if needed ????
 * hot reloading
 * rebuild chatbox
 
 # Global Chat
 * add in emoji picker, etc
-* continue working
 * add red color to chat mode button
 * ~~fix chatsounds int~~
 
 # DM Chat
 * ADD IN GROUP DMS: rewrite the net, recipients -> table
+* highlight dm tab on receiving
+* fix hightlighted colors, slower and not red
 * ~~fix recipient tab rendering~~ fix active tab rendering
 
 # Lua Editor
