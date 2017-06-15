@@ -365,7 +365,7 @@ hook.Add( "Initialize", "hnchat", function()
 	hnchat.derma.config = include("hnchat/modules/config.lua")
 
 	hnchat.derma.tabs:AddSheet( "Global", hnchat.derma.chat, "icon16/comments.png", false, false, "Chat" )
-	hnchat.derma.tabs:AddSheet( "PM", hnchat.derma.dms, "icon16/group.png", false, false, "PM" )
+	if hnchat.derma.dms then hnchat.derma.tabs:AddSheet( "PM", hnchat.derma.dms, "icon16/group.png", false, false, "PM" ) end
 	local spacer = hnchat.derma.tabs:AddSheet( "", vgui.Create( "DPanel" ) )
 		spacer.Tab.Paint = function(self) return false end
 		spacer.Tab:SetEnabled(false)
@@ -374,8 +374,8 @@ hook.Add( "Initialize", "hnchat", function()
 		spacer2.Tab.Paint = function(self) return false end
 		spacer2.Tab:SetEnabled(false)
 		spacer2.Tab:SetCursor("arrow")
-	hnchat.derma.tabs:AddSheet( "Lua", hnchat.derma.lua, "icon16/page_edit.png", false, false, "Lua" )
-	hnchat.derma.tabs:AddSheet( "Settings", hnchat.derma.config, "icon16/wrench_orange.png", false, false, "Config" )
+	if hnchat.derma.lua then hnchat.derma.tabs:AddSheet( "Lua", hnchat.derma.lua, "icon16/page_edit.png", false, false, "Lua" ) end
+	if hnchat.derma.config then hnchat.derma.tabs:AddSheet( "Settings", hnchat.derma.config, "icon16/wrench_orange.png", false, false, "Config" ) end
 
 	--[[for k, v in next, files do
 		local name = string.gsub( v, "%plua", "" )
