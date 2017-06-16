@@ -1,5 +1,7 @@
 if not hnchat then return end
 
+if SERVER then return end
+
 luastuff = vgui.Create("DPanel")
 luastuff.Paint = function() return false end
 local modes = {
@@ -81,7 +83,7 @@ local themes = {
 	Xcode = "xcode",
 }
 
-local ezdraw = function(self,w,h)
+local ezdraw = function( self, w, h )
 	col = self:IsHovered() and Color(222,222,222) or Color(234,234,234)
 	textcol = self:IsHovered() and Color(96,42,180) or Color(81,81,81)
 	textcol = self:IsDown() and color_white or textcol
@@ -102,20 +104,24 @@ luastuff.topbar.menu = vgui.Create( "DButton", luastuff.topbar )
 luastuff.topbar.menu:SetIcon("icon16/application_form_edit.png")
 luastuff.topbar.menu:SetText("Menu")
 luastuff.topbar.menu:Dock(LEFT)
-luastuff.topbar.menu.Paint = ezdraw
+luastuff.topbar.menu.Paint = function(self,w,h)
+	draw.RoundedBox( 0, 0, 0, w, h, Color(234,234,234))
+	draw.SimpleText( self:GetText(), "DermaDefault", w/2, h/2, Color(81,81,81), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+	return true
+end
 luastuff.topbar.menu.DoClick = function(self)
 	local menu = DermaMenu()
-	menu:AddOption( "Configure", function()
-		luastuff.html:Call([[editor.showSettingsMenu()]])
-	end)
-	menu:AddOption( "Toggle left panel", function()
-		luastuff.leftbar:SetVisible(not luastuff.leftbar:IsVisible())
-		luastuff.html:Dock(FILL) -- TODO: get that shit to auto do this
-	end)
-	menu:AddOption( "Show Help", function()
-		luastuff.html:Call([[editor.showKeyboardShortcuts()]])
-	end)
-
+		menu:AddOption( "Configure", function()
+			luastuff.html:Call([[editor.showSettingsMenu()]])
+		end)
+		menu:AddOption( "Toggle left panel", function()
+			luastuff.leftbar:SetVisible(not luastuff.leftbar:IsVisible())
+			luastuff.html:Dock(FILL) -- TODO: get that shit to auto do this
+			luastuff:InvalidateLayout()
+		end)
+		menu:AddOption( "Show Help", function()
+			luastuff.html:Call([[editor.showKeyboardShortcuts()]])
+		end)
 	local fix = menu:AddSubMenu("Fix")
 		fix:AddOption( "Reopen URL", function()
 			luastuff.html:OpenURL("http://metastruct.github.io/lua_editor/")
@@ -265,6 +271,7 @@ luastuff.leftbar:Dock(LEFT)
 luastuff.leftbar.Paint = function( self, w, h )
 	draw.RoundedBox( 3, 0, 0, w, h, Color(234,234,234,255))
 end
+luastuff.leftbar:SetWide(74)
 
 luastuff.leftbar.save = vgui.Create( "DButton", luastuff.leftbar )
 luastuff.leftbar.save:SetText("Save")
@@ -352,20 +359,76 @@ local spacer = vgui.Create("DPanel", luastuff.leftbar)
 
 -- easy lua combo box here
 
-luastuff.prop = vgui.Create( "DPropertySheet", luastuff )
+--[[luastuff.prop = vgui.Create( "DPropertySheet", luastuff )
 luastuff.prop:Dock(FILL)
-luastuff.prop.Paint = function() return false end
+luastuff.prop.Paint = function() return false end]]
 
 -- propertysheet (done)
 -- drag base (might be built into property sheet's tabs)
 -- then tabs
 
---[[luastuff.html = vgui.Create( "DHTML", luastuff )
+luastuff.html = vgui.Create( "DHTML", luastuff )
 luastuff.html:Dock(FILL)
 luastuff.html:OpenURL("http://metastruct.github.io/lua_editor/")
-luastuff.html:SetAllowLua(true)]]
+luastuff.html:SetAllowLua(false)
+luastuff.html.ConsoleMessage = function( self, msg, file, line )
+	if ( !isstring( msg ) ) then msg = "*js variable*" end
+
+	if ( isstring( file ) && isnumber( line ) ) then
+		if ( #file > 64 ) then
+			file = string.sub( file, 1, 64 ) .. "..."
+		end
+
+		MsgC( Color( 255, 160, 255 ), "[LEDITOR] " )
+		MsgC( Color( 255, 255, 255 ), file, ":", line, ": ", msg, "\n" )
+		return
+	end
+
+	if ( self.m_bAllowLua && msg:StartWith( "RUNLUA:" ) ) then
+		local strLua = msg:sub( 8 )
+
+		SELF = self
+		RunString( strLua )
+		SELF = nil
+		return
+	end
+
+	MsgC( Color( 255, 160, 255 ), "[LEDITOR] " )
+	MsgC( Color( 255, 255, 255 ), msg, "\n" )
+end
+luastuff.html:AddFunction( "console", "warn", function(...)
+	local txt = ""
+	for k, v in next, {...} do txt = txt..(k ~= 1 and " " or "")..v end
+	luastuff.html:ConsoleMessage(txt)
+end)
+
+function luastuff.html:HasLoaded()
+	return false
+end
+function luastuff.html:GetSession(name)
+	return "not finished"
+end
+function luastuff.html:GetCode(name)
+	return self:HasLoaded() and self:GetSession( name ) or ""
+end
+luastuff.html:AddFunction("console","request",function(...) 
+	return {...}
+end)
 
 --[[
+			window.gmodinterface = {
+				OnSelection: gen("OnSelection"),
+				OnReady: gen("OnReady"),
+				OnLog: gen("OnLog"),
+				OnCode: function (code) 
+				{
+					gen("code")(code.length);
+				},
+				GetOptions: gen("GetOptions")
+			}
+
+	maybe html.callbacks ????
+
 	[LEDITOR] InternalSnippetsUpdate -> function () { [native code] }
 	[LEDITOR] OnCode -> function () { [native code] }
 	[LEDITOR] OnLog -> function () { [native code] }
