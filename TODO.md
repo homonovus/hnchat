@@ -8,6 +8,7 @@
 * optimize if needed ????
 * hot reloading
 * rebuild chatbox
+* different fonts for richtext/textentry
 
 # Global Chat
 * add in emoji picker, etc
@@ -19,6 +20,7 @@
 * highlight dm tab on receiving
 * fix hightlighted colors, slower and not red
 * ~~fix recipient tab rendering~~ fix active tab rendering
+* cs logs
 
 # Lua Editor
 * ~~figure out how to get value of editor from lua: maybe window.gmodinterface???~~
