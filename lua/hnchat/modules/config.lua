@@ -1,5 +1,7 @@
 if not hnchat then return end
 
+if SERVER then return end
+
 concommand.Add( "hnchat_open_config", function() -- opens config panel
 	hnchat.openChatbox("Settings")
 end)
@@ -111,13 +113,13 @@ configstuff.graphics = configstuff.CList:Add("Performance / Graphics")
 	AddSettingsOption( configstuff.graphics.list, "Water Reflection", "r_WaterDrawReflection", 1, 0 )
 	AddSettingsOption( configstuff.graphics.list, "Water Refraction", "r_WaterDrawRefraction", 1, 0 )
 	AddSettingsSpacer(configstuff.graphics.list)
-	if pac then AddSettingsOption( configstuff.graphics.list, "PAC (player outfits)", "pac_enable", 1, 0 ) end
-	AddSettingsOption( configstuff.graphics.list, "    Sounds", "pac_enable_sound", 1, 0 )
-	AddSettingsOption( configstuff.graphics.list, "    Increase FPS", "pac_suppress_frames", 1, 0 )
-	AddSettingsOption( configstuff.graphics.list, "    Download Textures", "pac_enable_urltex", 1, 0 )
-	AddSettingsOption( configstuff.graphics.list, "    Download Models", "pac_enable_urlobj", 1, 0 )
-	-- slider for pac_draw_distance: 0 - 10k
-	AddSettingsSlider( configstuff.graphics.list, "    Draw Distance", "pac_draw_distance", 2, 0, 10000 )
+	if pac then AddSettingsOption( configstuff.graphics.list, "PAC (player outfits)", "pac_enable", 1, 0 )
+		AddSettingsOption( configstuff.graphics.list, "    Sounds", "pac_enable_sound", 1, 0 )
+		AddSettingsOption( configstuff.graphics.list, "    Increase FPS", "pac_suppress_frames", 1, 0 )
+		AddSettingsOption( configstuff.graphics.list, "    Download Textures", "pac_enable_urltex", 1, 0 )
+		AddSettingsOption( configstuff.graphics.list, "    Download Models", "pac_enable_urlobj", 1, 0 )
+		AddSettingsSlider( configstuff.graphics.list, "    Draw Distance", "pac_draw_distance", 2, 0, 10000 )
+	end
 configstuff.dms = configstuff.CList:Add( "PM" )
 	configstuff.dms:SetExpanded(false)
 	configstuff.dms:SetPadding(0)

@@ -1,8 +1,8 @@
 --if hnchat then hnchat.UnLoad() end
 
---local hnchat_disable = CreateClientConVar("hnchat_disable",1) -- disable by default bc people might not want it
+local hnchat_disable = CreateClientConVar("hnchat_disable", 0)
 
---if hnchat_disable:GetBool() then return end
+if hnchat_disable:GetBool() then return end
 
 hook.Add( "Initialize", "hnchat", function()
 	hook.Remove( "Initialize", "hnchat" )
@@ -15,7 +15,8 @@ hook.Add( "Initialize", "hnchat", function()
 	local hnchat_highlight = CreateClientConVar( "hnchat_highlight", 1 )
 
 	function hnchat.tofull()
-		hnchat.isFull = true
+		print("full")
+		hnchat.derma.Frame:SetCookie("full",1)
 		local x, y = hnchat.derma.Frame:GetPos()
 		local w, h = hnchat.derma.Frame:GetSize()
 		hnchat.derma.Frame:SetCookie("x",x)
@@ -25,22 +26,23 @@ hook.Add( "Initialize", "hnchat", function()
 
 		hnchat.derma.Frame:SetSize(ScrW(), ScrH())
 		hnchat.derma.Frame:SetPos(0,0)
-		hnchat.derma.Frame:SetDraggable( false )
+		hnchat.derma.Frame:SetDraggable(false)
 
-		hnchat.derma.FSButton.DoClick = hnchat.towin
+		hnchat.derma.Frame.FSButton.DoClick = hnchat.towin
 	end
 	function hnchat.towin()
-		hnchat.isFull = false
+		print("win")
+		hnchat.derma.Frame:SetCookie("full",0)
 		local x = hnchat.derma.Frame:GetCookie("x",x)
 		local y = hnchat.derma.Frame:GetCookie("y",y)
 		local w = hnchat.derma.Frame:GetCookie("w",w)
 		local h = hnchat.derma.Frame:GetCookie("h",h)
 
-		hnchat.derma.Frame:SetDraggable( true )
+		hnchat.derma.Frame:SetDraggable(true)
 		hnchat.derma.Frame:SetPos(x,y)
 		hnchat.derma.Frame:SetSize(w,h)
 
-		hnchat.derma.FSButton.DoClick = hnchat.tofull
+		hnchat.derma.Frame.FSButton.DoClick = hnchat.tofull
 	end
 	function hnchat.closeChatbox()
 		hnchat.derma.Frame:SetMouseInputEnabled( false )
@@ -153,7 +155,7 @@ hook.Add( "Initialize", "hnchat", function()
 			hnchat.derma.Frame.oldThink(self)
 		end
 		hnchat.derma.Frame.OnKeyCodePressed = function( self, key )
-			if key == KEY_F11 then hnchat.derma.FSButton.DoClick() end
+			if key == KEY_F11 then hnchat.derma.Frame.FSButton.DoClick() end
 		end
 		hnchat.derma.Frame:DockPadding(5,4,5,1)
 
@@ -172,7 +174,6 @@ hook.Add( "Initialize", "hnchat", function()
 	hnchat.derma.tabs:Dock(FILL)
 	hnchat.derma.tabs:SetPadding(0)
 	hnchat.derma.tabs.Paint = function() return false end
-	hnchat.derma.tabs.tabScroller:SetCursor("sizeall")
 	hnchat.derma.tabs.tabScroller:SetMouseInputEnabled(true)
 	hnchat.derma.tabs.tabScroller.oldThink = hnchat.derma.tabs.tabScroller.Think
 	hnchat.derma.tabs.tabScroller.Think = function(self)
@@ -365,7 +366,7 @@ hook.Add( "Initialize", "hnchat", function()
 	hnchat.derma.config = include("hnchat/modules/config.lua")
 
 	hnchat.derma.tabs:AddSheet( "Global", hnchat.derma.chat, "icon16/comments.png", false, false, "Chat" )
-	hnchat.derma.tabs:AddSheet( "PM", hnchat.derma.dms, "icon16/group.png", false, false, "PM" )
+	if hnchat.derma.dms then hnchat.derma.tabs:AddSheet( "PM", hnchat.derma.dms, "icon16/group.png", false, false, "PM" ) end
 	local spacer = hnchat.derma.tabs:AddSheet( "", vgui.Create( "DPanel" ) )
 		spacer.Tab.Paint = function(self) return false end
 		spacer.Tab:SetEnabled(false)
@@ -374,51 +375,51 @@ hook.Add( "Initialize", "hnchat", function()
 		spacer2.Tab.Paint = function(self) return false end
 		spacer2.Tab:SetEnabled(false)
 		spacer2.Tab:SetCursor("arrow")
-	hnchat.derma.tabs:AddSheet( "Lua", hnchat.derma.lua, "icon16/page_edit.png", false, false, "Lua" )
-	hnchat.derma.tabs:AddSheet( "Settings", hnchat.derma.config, "icon16/wrench_orange.png", false, false, "Config" )
+	if hnchat.derma.lua then hnchat.derma.tabs:AddSheet( "Lua", hnchat.derma.lua, "icon16/page_edit.png", false, false, "Lua" ) end
+	if hnchat.derma.config then hnchat.derma.tabs:AddSheet( "Settings", hnchat.derma.config, "icon16/wrench_orange.png", false, false, "Config" ) end
 
 	--[[for k, v in next, files do
 		local name = string.gsub( v, "%plua", "" )
 		hnchat.derma.tabs:AddSheet( name, hnchat.derma[name], nil, false, false, name )
 	end]]
 
-	hnchat.derma.CloseButton = vgui.Create( "DButton", hnchat.derma.Frame )
-	hnchat.derma.CloseButton:SetSize( 42, 16 )
-	hnchat.derma.CloseButton.Paint = function( self, w, h )
+	hnchat.derma.Frame.CloseButton = vgui.Create( "DButton", hnchat.derma.Frame )
+	hnchat.derma.Frame.CloseButton:SetSize( 42, 16 )
+	hnchat.derma.Frame.CloseButton.Paint = function( self, w, h )
 		local col = self:IsHovered() and Color(255,0,0) or Color(255,62,62)
 
 		draw.RoundedBoxEx( 4, 0, 0, w, h, col, false, false, false, true )
 		draw.SimpleTextOutlined( "r", "Marlett", w/2, h/2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black )
 		return true
 	end
-	hnchat.derma.CloseButton.DoClick = function(self)
+	hnchat.derma.Frame.CloseButton.DoClick = function(self)
 		hnchat.closeChatbox()
 	end
-	hnchat.derma.CloseButton.oldThink = hnchat.derma.CloseButton.Think
-	hnchat.derma.CloseButton.Think = function(self)
+	hnchat.derma.Frame.CloseButton.oldThink = hnchat.derma.Frame.CloseButton.Think
+	hnchat.derma.Frame.CloseButton.Think = function(self)
 		local x, y = self:GetParent():GetSize()
 		self:SetPos( x - 46, 0 )
 		self.oldThink(self)
 	end
 
-	hnchat.derma.FSButton = vgui.Create( "DButton", hnchat.derma.Frame )
-	hnchat.derma.FSButton:SetText("")
-	hnchat.derma.FSButton:SetSize( 24, 16 )
-	hnchat.derma.FSButton.Paint = function( self, w, h )
+	hnchat.derma.Frame.FSButton = vgui.Create( "DButton", hnchat.derma.Frame )
+	hnchat.derma.Frame.FSButton:SetText("")
+	hnchat.derma.Frame.FSButton:SetSize( 24, 16 )
+	hnchat.derma.Frame.FSButton.Paint = function( self, w, h )
 		local col = self:IsHovered() and Color(128,128,128) or Color(177,177,177)
-		local symbol = hnchat.isFull and "2" or "1"
+		local symbol = (self:GetParent():GetCookie("full", 0) == 1 ) and "2" or "1"
 
 		draw.RoundedBoxEx( 4, 0, 0, w, h, col, false, false, true, false )
 		draw.SimpleTextOutlined(symbol, "Marlett", w/2, h/2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
 		return true
 	end
-	hnchat.derma.FSButton.oldThink = hnchat.derma.FSButton.Think
-	hnchat.derma.FSButton.Think = function(self)
+	hnchat.derma.Frame.FSButton.oldThink = hnchat.derma.Frame.FSButton.Think
+	hnchat.derma.Frame.FSButton.Think = function(self)
 		local x, y = self:GetParent():GetSize()
 		self:SetPos( x - 70, 0 )
 		self.oldThink(self)
 	end
-	hnchat.derma.FSButton.DoClick = hnchat.tofull
+	hnchat.derma.Frame.FSButton.DoClick = hnchat.tofull
 
 	hnchat.AddText = function( self, ... )
 		local tab = {...}
@@ -481,6 +482,21 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.AddText( hnchat.derma.chat.RichText, ... )
 		oldChatAddText(...)
 	end
+
+	hook.Add("ChatText", "hnchat", function(idx, name, text, type)
+		--if not IsValid(chatbox.frame) then chatbox.Build() end
+
+		if type == "chat" then
+			hnhcat.AddText(hnchat.derma.chat.RichText, color_green, name, color_white, ": ", text)
+			--chathud:AddText(green, name, color_white, ": " .. text)
+			return
+		end
+
+		--if type == "darkrp" then return end -- Compat for some weird stuff with darkrp
+
+		hnchat.AddText(hnchat.derma.chat.RichText, color_green, text)
+		--chathud:AddText(green, text)
+	end)
 
 	net.Receive("hnchat_local_receive", function(len)
 		local ply = net.ReadEntity()

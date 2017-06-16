@@ -21,19 +21,3 @@ hnchat.net = {}
 		local team = net.ReadBool()
 		gamemode.Call( "PlayerSay", ply, txt, team )
 	end)
-
-	hnchat.net.dm_send = util.AddNetworkString("hnchat_dm_send")
-	hnchat.net.dm_receive = util.AddNetworkString("hnchat_dm_receive")
-	hnchat.net.dm_send_sv = net.Receive("hnchat_dm_send",function(len, ply)
-		local target = net.ReadEntity()
-		local txt = net.ReadString()
-
-		--for k, v in next, plys do
-			if not target:IsPlayer() then return end--table.remove(plys, k) end
-		--end
-
-		net.Start( "hnchat_dm_receive", false )
-			net.WriteEntity(ply)
-			net.WriteString(txt)
-		net.Send(target)
-	end)
