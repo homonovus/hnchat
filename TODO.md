@@ -9,25 +9,28 @@
 * hot reloading
 * rebuild chatbox
 * ~~different fonts for richtext/textentry~~
+* scale textentry with font's size
+* make textentry enlarge with lines
 
 # Global Chat
 * add in emoji picker, etc
 * add red color to chat mode button
-* ~~fix chatsounds int~~
+* ~~fix chatsounds integration~~
 
 # DM Chat
 * group dms: rewrite the net, recipients -> table (should be ez)
 * highlight dm tab on receiving
-* fix hightlighted colors, slower and not red
+* fix hightlight colors, slower and not red
 * ~~fix recipient tab rendering~~ fix active tab rendering
 * cs logs (maybe sv checking? store hash maybe, no tampering allowed)
 
 # Lua Editor
 * ~~figure out how to get value of editor from lua: maybe window.gmodinterface???~~
-* ~~return value of editor from dhtml: js -> lua~~
+* ~~return value of editor from dhtml: js -> lua~~ AddFunction to dhtml
+* window.gmodinterface
 * functionality for the buttons lol
 * fix buttons' icons
-* auto raw frome haste/pastebin
+* auto raw from haste/pastebin
 * give lua editor tabs (try to keep one dhtml)
 * tab dragging
 
