@@ -1,6 +1,10 @@
 --if hnchat then hnchat.UnLoad() end
 
+<<<<<<< HEAD
 local hnchat_disable = CreateClientConVar("hnchat_disable", 0)
+=======
+local hnchat_disable = CreateClientConVar("hnchat_disable",1) -- disable by default bc people might not want it
+>>>>>>> origin/master
 
 if hnchat_disable:GetBool() then return end
 
