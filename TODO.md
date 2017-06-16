@@ -8,7 +8,7 @@
 * optimize if needed ????
 * hot reloading
 * rebuild chatbox
-* different fonts for richtext/textentry
+* ~~different fonts for richtext/textentry~~
 
 # Global Chat
 * add in emoji picker, etc
@@ -16,16 +16,19 @@
 * ~~fix chatsounds int~~
 
 # DM Chat
-* ADD IN GROUP DMS: rewrite the net, recipients -> table
+* group dms: rewrite the net, recipients -> table (should be ez)
 * highlight dm tab on receiving
 * fix hightlighted colors, slower and not red
 * ~~fix recipient tab rendering~~ fix active tab rendering
-* cs logs
+* cs logs (maybe sv checking? store hash maybe, no tampering allowed)
 
 # Lua Editor
 * ~~figure out how to get value of editor from lua: maybe window.gmodinterface???~~
-* return value of editor from dhtml: js -> lua
-* give lua editor proper tab support with dpropertysheet
+* ~~return value of editor from dhtml: js -> lua~~
+* functionality for the buttons lol
+* fix buttons' icons
+* auto raw frome haste/pastebin
+* give lua editor tabs (try to keep one dhtml)
 * tab dragging
 
 # Settings
@@ -33,3 +36,4 @@
 * remove small gap between settings groups
 * ~~add settings for PMs (you know the ones)~~
 * copy all of meta's settings lol
+* fix font selector not auto sizing parent
