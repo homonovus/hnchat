@@ -11,8 +11,8 @@
 * hot reloading
 * rebuild chatbox
 * ~~different fonts for richtext/textentry~~
-* scale textentry with font's size
-* make textentry enlarge with lines
+* scale textentry's with font's size
+* make textentry's bigger with more lines
 
 # Global Chat
 * add in emoji picker, etc
@@ -22,8 +22,8 @@
 # DM Chat
 * group dms: rewrite the net, recipients -> table (should be ez)
 * highlight dm tab on receiving
-* fix hightlight colors, slower and not red
-* ~~fix recipient tab rendering~~ fix active tab rendering
+* ~~fix hightlight colors, slower and not red~~
+* ~~fix recipient tab rendering fix active tab rendering~~
 * cs logs (maybe sv checking? store hash maybe, no tampering allowed)
 
 # Lua Editor
