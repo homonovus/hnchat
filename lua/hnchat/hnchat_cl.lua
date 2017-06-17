@@ -13,9 +13,10 @@ hook.Add( "Initialize", "hnchat", function()
 	local hnchat_timestamps_24hr = CreateClientConVar( "hnchat_timestamps_24hr", 1 )
 	local hnchat_greentext = CreateClientConVar( "hnchat_greentext", 1 )
 	local hnchat_highlight = CreateClientConVar( "hnchat_highlight", 1 )
+	local hnchatbox_history_font = CreateClientConVar( "hnchatbox_history_font", "DermaDefault" )
+	local hnchatbox_font_input = CreateClientConVar( "hnchatbox_font_input", "DermaDefault" )
 
 	function hnchat.tofull()
-		print("full")
 		hnchat.derma.Frame:SetCookie("full",1)
 		local x, y = hnchat.derma.Frame:GetPos()
 		local w, h = hnchat.derma.Frame:GetSize()
@@ -31,7 +32,6 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.Frame.FSButton.DoClick = hnchat.towin
 	end
 	function hnchat.towin()
-		print("win")
 		hnchat.derma.Frame:SetCookie("full",0)
 		local x = hnchat.derma.Frame:GetCookie("x",x)
 		local y = hnchat.derma.Frame:GetCookie("y",y)
@@ -53,6 +53,7 @@ hook.Add( "Initialize", "hnchat", function()
 		gamemode.Call( "FinishChat" )
 
 		hnchat.derma.chat.TextEntry:SetText("")
+		hnchat.derma.chat.msgmode.curtype = 0
 		gamemode.Call( "ChatTextChanged", "" )
 	end
 	function hnchat.openChatbox(mode)
@@ -200,9 +201,12 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.chat.RichText.Paint = function( self, w ,h )
 			draw.RoundedBox( 0, 0, 0, w, h, Color(22,22,22,196))
 		end
+		cvars.AddChangeCallback( "hnchatbox_history_font", function( cmd, old, new)
+			hnchat.derma.chat.RichText:PerformLayout()
+		end)
 		hnchat.derma.chat.RichText.PerformLayout = function( self )
-			self:SetFontInternal( "DermaDefault" )
-			self:SetFGColor(Color( 255, 255, 255, 128))
+			self:SetFontInternal(GetConVar("hnchatbox_history_font"):GetString())
+			self:SetFGColor(Color(255,255,255,128))
 		end
 		hnchat.derma.chat.RichText.ActionSignal = function( self, signalName, signalValue )
 			if ( signalName == "TextClicked" ) then
@@ -216,11 +220,24 @@ hook.Add( "Initialize", "hnchat", function()
 		hnchat.derma.chat.message:SetSize(w,14)
 		hnchat.derma.chat.TextEntry = vgui.Create( "DTextEntry", hnchat.derma.chat.message )
 		hnchat.derma.chat.TextEntry:Dock(FILL)
+		hnchat.derma.chat.TextEntry:SetMultiline(true)
 		hnchat.derma.chat.TextEntry.OldThink = hnchat.derma.chat.TextEntry.Think
 		hnchat.derma.chat.TextEntry.Think = function(self)
 			gamemode.Call( "ChatTextChanged", self:GetValue() )
 			self.OldThink(self)
 		end
+		cvars.AddChangeCallback( "hnchatbox_font_input", function( cmd, old, new)
+			if new == old then return end
+
+			hnchat.derma.chat.TextEntry:SetFont(new)
+			hnchat.derma.chat.TextEntry:ApplySchemeSettings()
+			if hnchat.derma.dms then
+				hnchat.derma.dms.TextEntry:SetFont(new)
+				hnchat.derma.dms.TextEntry:ApplySchemeSettings()
+			end
+
+			return
+		end)
 		hnchat.derma.chat.TextEntry.Paint = function( self, w ,h )
 			local col = self.HistoryPos == 0 and Color(255,255,255,255) or Color(241,201,151,255)
 			draw.RoundedBox( 0, 0, 0, w, h, col )
@@ -251,7 +268,6 @@ hook.Add( "Initialize", "hnchat", function()
 
 				self.HistoryPos = 0
 				hnchat.closeChatbox()
-				hnchat.derma.chat.msgmode.curtype = 0
 				return true
 			elseif key == KEY_UP then
 				self.HistoryPos = self.HistoryPos - 1
@@ -433,6 +449,8 @@ hook.Add( "Initialize", "hnchat", function()
 			self:AppendText(" - ")
 		end
 
+		self:InsertColorChange(100,255,100,255)
+
 		if #tab == 1 and isstring(tab[1]) then
 			self:AppendText(tab[1])
 			self:AppendText("\n")
@@ -444,13 +462,13 @@ hook.Add( "Initialize", "hnchat", function()
 			if IsColor(v) or istable(v) then
 				self:InsertColorChange(v.r, v.g, v.b, 255)
 			elseif type(v) == "string"  then
-				--[[if (v:find(LocalPlayer():Nick()) or v:find(LocalPlayer():UndecorateNick())) and hnchat_highlight:GetBool() then
-					hnchat.derma.chat.RichText:InsertColorChange( 255, 90, 35, 255 )
-				end]]
+				if (v:find(LocalPlayer():Nick()) or v:find(LocalPlayer():UndecorateNick())) and hnchat_highlight:GetBool() then
+					self:InsertColorChange( 255, 90, 35, 255 )
+				end
 
-				--[[if v:sub(3, 3):find(">") and hnchat_greentext:GetBool() then
-					hnchat.derma.chat.RichText:InsertColorChange( 46, 231, 46, 255)
-				end]]
+				if v:sub(3, 3):find(">") and hnchat_greentext:GetBool() then
+					self:InsertColorChange( 46, 231, 46, 255)
+				end
 
 				local url = v:match("https?://[^%s%\"]+")
 				local s,e = v:find("https?://[^%s%\"]+")
@@ -487,12 +505,12 @@ hook.Add( "Initialize", "hnchat", function()
 		--if not IsValid(chatbox.frame) then chatbox.Build() end
 
 		if type == "chat" then
-			hnhcat.AddText(hnchat.derma.chat.RichText, color_green, name, color_white, ": ", text)
+			hnchat.AddText(hnchat.derma.chat.RichText, color_green, name, color_white, ": ", text)
 			--chathud:AddText(green, name, color_white, ": " .. text)
 			return
 		end
 
-		--if type == "darkrp" then return end -- Compat for some weird stuff with darkrp
+		--if type == "darkrp" then return end
 
 		hnchat.AddText(hnchat.derma.chat.RichText, color_green, text)
 		--chathud:AddText(green, text)

@@ -104,6 +104,7 @@ luastuff.topbar.menu = vgui.Create( "DButton", luastuff.topbar )
 luastuff.topbar.menu:SetIcon("icon16/application_form_edit.png")
 luastuff.topbar.menu:SetText("Menu")
 luastuff.topbar.menu:Dock(LEFT)
+luastuff.topbar.menu:SetWide(74)
 luastuff.topbar.menu.Paint = function(self,w,h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(234,234,234))
 	draw.SimpleText( self:GetText(), "DermaDefault", w/2, h/2, Color(81,81,81), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
@@ -292,7 +293,6 @@ luastuff.leftbar.open.Paint = ezdraw
 luastuff.leftbar.open:Dock(TOP)
 
 local spacer = vgui.Create("DPanel", luastuff.leftbar)
-	spacer:SetSize(74,8)
 	spacer:Dock(TOP)
 	spacer.Paint = function() return false end
 
@@ -312,7 +312,6 @@ luastuff.leftbar.loadurl.Paint = ezdraw
 luastuff.leftbar.loadurl:Dock(TOP)
 
 local spacer = vgui.Create("DPanel", luastuff.leftbar)
-	spacer:SetSize(74,8)
 	spacer:Dock(TOP)
 	spacer.Paint = function() return false end
 
@@ -335,7 +334,6 @@ luastuff.leftbar.receive.Paint = ezdraw
 luastuff.leftbar.receive:Dock(TOP)
 
 local spacer = vgui.Create("DPanel", luastuff.leftbar)
-	spacer:SetSize(74,8)
 	spacer:Dock(TOP)
 	spacer.Paint = function() return false end
 
@@ -346,14 +344,12 @@ luastuff.leftbar.beauty.Paint = ezdraw
 luastuff.leftbar.beauty:Dock(TOP)
 
 local spacer = vgui.Create("DPanel", luastuff.leftbar)
-	spacer:SetSize(74,8)
 	spacer:Dock(TOP)
 	spacer.Paint = function() return false end
 
 -- send as shit here
 
 local spacer = vgui.Create("DPanel", luastuff.leftbar)
-	spacer:SetSize(74,8)
 	spacer:Dock(TOP)
 	spacer.Paint = function() return false end
 

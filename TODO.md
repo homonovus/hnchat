@@ -1,42 +1,28 @@
 # In General
-* ~~fix links not appearing properly in richtexts~~
-* ~~finish adding in links to richtexts~~ highlight links only, not the whole line
-* ~~**make modular**~~ finish modularity
+* finish adding in settings options
+* ~~fix links not appearing properly in richtexts~~ it was the c func reading `//` as a comment; fixed
+* ~~finish adding in links to richtexts~~
+* **make modular**
 * ~~frame dragging~~
-* ~~not replace chat.addtext maybe... maybe~~ ~~make a appendinto function~~
-* ctrl+backspace support into TextEntry's
-* optimize if needed ????
-* hot reloading
-* rebuild chatbox
-* ~~different fonts for richtext/textentry~~
-* scale textentry with font's size
-* make textentry enlarge with lines
+* ~~not replace chat.addtext maybe... maybe~~ make a appendinto function
+* add in ctrl+backspace support into TextEntry's
 
 # Global Chat
 * add in emoji picker, etc
-* add red color to chat mode button
-* ~~fix chatsounds integration~~
+* continue working
+* add red color to chat mode button thing
+* ~~fix chatsounds int~~
 
 # DM Chat
-* group dms: rewrite the net, recipients -> table (should be ez)
-* highlight dm tab on receiving
-* fix hightlight colors, slower and not red
+* ADD IN GROUP DMS. rewrite the net funcs to change recipients to a table
 * ~~fix recipient tab rendering~~ fix active tab rendering
-* cs logs (maybe sv checking? store hash maybe, no tampering allowed)
 
 # Lua Editor
-* ~~figure out how to get value of editor from lua: maybe window.gmodinterface???~~
-* ~~return value of editor from dhtml: js -> lua~~ AddFunction to dhtml
-* window.gmodinterface
-* functionality for the buttons lol
-* fix buttons' icons
-* auto raw from haste/pastebin
-* give lua editor tabs (try to keep one dhtml)
+* ~~figure out how to get value of editor from lua: maybe window.gmodinterface???~~ value of lua editor is through custom derma panel; figure it out
+* give lua editor proper tab support with dpropertysheet
 * tab dragging
 
 # Settings
-* ~~get current value of net_graph and highlight it on settings and clear all radios if any == 0~~
-* ~~remove small gap between settings groups~~
-* ~~add settings for PMs (you know the ones)~~
-* copy all of meta's settings lol
-* fix font selector not auto sizing parent
+* get current value of net_graph and highlight it on settings and clear all radios if any == 0
+* remove small gap between settings groups
+* add settings for PMs (you know the ones)
