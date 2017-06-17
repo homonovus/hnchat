@@ -36,7 +36,7 @@
 
 # Settings
 * ~~get current value of net_graph and highlight it on settings and clear all radios if any == 0~~
-* remove small gap between settings groups
+* ~~remove small gap between settings groups~~
 * ~~add settings for PMs (you know the ones)~~
 * copy all of meta's settings lol
 * fix font selector not auto sizing parent
