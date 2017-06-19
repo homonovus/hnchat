@@ -21,7 +21,7 @@
 
 # DM Chat
 * group dms: rewrite the net, recipients -> table (should be ez)
-* highlight dm tab on receiving
+* ~~highlight dm tab on receiving~~
 * ~~fix hightlight colors, slower and not red~~
 * ~~fix recipient tab rendering fix active tab rendering~~
 * cs logs (maybe sv checking? store hash maybe, no tampering allowed)
@@ -30,7 +30,7 @@
 * ~~figure out how to get value of editor from lua: maybe window.gmodinterface???~~
 * ~~return value of editor from dhtml: js -> lua~~ AddFunction to dhtml
 * new sessions from editor itself
-* GetSession: actually get sessions
+* store session in lua panel
 * window.gmodinterface
 * functionality for the buttons lol
 * fix buttons' icons
