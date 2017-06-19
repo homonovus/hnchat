@@ -29,6 +29,8 @@
 # Lua Editor
 * ~~figure out how to get value of editor from lua: maybe window.gmodinterface???~~
 * ~~return value of editor from dhtml: js -> lua~~ AddFunction to dhtml
+* new sessions from editor itself
+* GetSession: actually get sessions
 * window.gmodinterface
 * functionality for the buttons lol
 * fix buttons' icons
