@@ -18,6 +18,7 @@
 - [ ] add in emoji picker, etc
 - [ ] add red color to chat mode button
 - [x] fix chatsounds integration
+- [ ] show local players
 
 # DM Chat
 - [ ] group dms: rewrite the net, recipients -> table (should be ez)
