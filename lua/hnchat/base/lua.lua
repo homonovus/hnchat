@@ -180,6 +180,40 @@ local function AddButton( parent, vert, txt, icon, wide, paint, cb )
 	if vert then parent:AddPanel(but) end
 	return but
 end
+local function fixupURL(url)
+	if url and isstring(url) then
+		url = url:Trim()
+
+		url = url:gsub([[^http%://onedrive%.live%.com/redir?]],[[https://onedrive.live.com/download?]])
+		url = url:gsub( "pastebin.com/([a-zA-Z0-9]*)$", "pastebin.com/raw.php?i=%1")
+		url = url:gsub( "hastebin.com/([a-zA-Z0-9]*)$", "hastebin.com/raw/%1")
+		url = url:gsub( "github.com/([a-zA-Z0-9_]+)/([a-zA-Z0-9_]+)/blob/", "github.com/%1/%2/raw/")
+	end
+	return url
+end
+local function SimpleFetch(url,cb,failcb)
+	if not url or #url<4 then return end
+
+	url = fixupURL(url)
+
+	http.Fetch(url,
+	function(data,len,headers,code)
+		if code~=200 then
+			Msg"[PAC] Url "print(string.format("failed loading %s (server returned %s)",url,tostring(code)))
+			if failcb then
+				failcb(code,data,len,headers)
+			end
+			return
+		end
+		cb(data,len,headers)
+	end,
+	function(err)
+		Msg"[PAC] Url "print(string.format("failed loading %s (%s)",url,tostring(err)))
+		if failcb then
+			failcb(err)
+		end
+	end)
+end
 
 lua.topbar = vgui.Create( "DHorizontalScroller", lua )
 lua.topbar:Dock(TOP)
@@ -252,7 +286,7 @@ end,function(self)
 	menu:Open()
 end)
 local spacer = vgui.Create("DPanel", lua.topbar)
-	spacer:SetSize(32,24)
+	spacer:SetWide(32)
 	spacer:Dock(LEFT)
 	spacer.Paint = function(self) return false end
 	lua.topbar:AddPanel(spacer)
@@ -277,53 +311,75 @@ AddButton(lua.topbar, true, "Shared", "icon16/world.png", 70, nil, function()
 	luaf.RunOnShared(lua.html:GetCode(),LocalPlayer())
 end)
 local spacer = vgui.Create("DPanel", lua.topbar)
-	spacer:SetSize(16,24)
+	spacer:SetWide(16)
 	spacer:Dock(LEFT)
 	spacer.Paint = function() return false end
 	lua.topbar:AddPanel(spacer)
 --AddButton(lua.topbar, true, "Player", "icon16/user.png", 66)
 --AddButton(lua.topbar, true, "Devs", "icon16/user_gray.png", 60)
 --AddButton(lua.topbar, true, "Nearby", "icon16/group.png", 71)
---local spacer = vgui.Create("DPanel", lua.topbar)
-	--spacer:SetSize(16,24)
-	--spacer:Dock(LEFT)
-	--spacer.Paint = function() return false end
-	--lua.topbar:AddPanel(spacer)
---AddButton(lua.topbar,"Servers","icon16/server_lightning.png",85)
---AddButton(lua.topbar,"Javascript","icon16/script_gear.png",85)
+--[[local spacer = vgui.Create("DPanel", lua.topbar)
+	spacer:SetSize(16,24)
+	spacer:Dock(LEFT)
+	spacer.Paint = function() return false end
+	lua.topbar:AddPanel(spacer)
+AddButton(lua.topbar,"Servers","icon16/server_lightning.png",85)
+AddButton(lua.topbar,"Javascript","icon16/script_gear.png",85)]]
 
 AddButton(lua.leftbar, false, "Save", "icon16/server.png", 74)
-AddButton(lua.leftbar, false, "Load", "icon16/script_edit.png", 74)
+AddButton(lua.leftbar, false, "Load", "icon16/script_edit.png", 74, nil, function()
+	local menu = DermaMenu()
+		menu:AddOption( "big", function()
+			-- lua.html:Call([[editor.showKeyboardShortcuts()]])
+		end)
+	menu:AddSpacer()
+	local fix = menu:AddSubMenu("chungo")
+		fix:AddOption( "1", function()
+			-- lua.html:OpenURL("http://metastruct.github.io/lua_editor/")
+		end)
+		fix:AddSpacer()
+		fix:AddOption( "2", function()
+			-- lua.html:Refresh(true)
+		end)
+
+	menu:Open()
+end)
 AddButton(lua.leftbar, false, "Open", "icon16/folder_explore.png", 74)
 local spacer = vgui.Create("DPanel", lua.leftbar)
 	spacer:Dock(TOP)
+	spacer:SetTall(8)
 	spacer.Paint = function() return false end
 AddButton(lua.leftbar, false, "Load URL", "icon16/page_link.png", 74, nil, function(self)
 	Derma_StringRequest("Load URL","Paste in URL, pastebin and hastebin links are automatically in raw form.","",function(txt)
-		if not txt:find("com/raw") then
-			print("not raw")
-		else
-			print("fuckin raw")
+		if txt:find("https?://") then
+			local function callback(str)
+				lua.html:Call('editor.setValue("'..string.JavascriptSafe(str)..'");')
+			end
+			SimpleFetch(txt, callback)
 		end
 	end)
 end )
 local spacer = vgui.Create("DPanel", lua.leftbar)
 	spacer:Dock(TOP)
+	spacer:SetTall(8)
 	spacer.Paint = function() return false end
 AddButton(lua.leftbar, false, "pastebin", "icon16/page_link.png", 74)
 AddButton(lua.leftbar, false, "Send", "icon16/email_go.png", 74)
 AddButton(lua.leftbar, false, "Receive", "icon16/email_open.png", 74)
 local spacer = vgui.Create("DPanel", lua.leftbar)
 	spacer:Dock(TOP)
+	spacer:SetTall(8)
 	spacer.Paint = function() return false end
 AddButton(lua.leftbar, false, "Beautify", "icon16/font.png", 74)
 
 --local spacer = vgui.Create("DPanel", lua.leftbar)
 	--spacer:Dock(TOP)
+	--spacer:SetTall(8)
 	--spacer.Paint = function() return false end
 -- send as shit here
 --local spacer = vgui.Create("DPanel", lua.leftbar)
 	--spacer:Dock(TOP)
+	--spacer:SetTall(8)
 	--spacer.Paint = function() return false end
 -- easy lua combo box here
 
