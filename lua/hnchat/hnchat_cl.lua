@@ -1,5 +1,12 @@
 --if hnchat then hnchat.UnLoad() end
 
+net.Receive("hnchat_local", function(len)
+	local ply = net.ReadEntity()
+	local txt = net.ReadString()
+
+	chat.AddText( Color(24,161,35), "(Local) ", ply, color_white, ": " .. txt )
+end)
+
 local hnchat_disable = CreateClientConVar("hnchat_disable", 0)
 
 if hnchat_disable:GetBool() then return end
@@ -57,6 +64,7 @@ hook.Add( "Initialize", "hnchat", function()
 		gamemode.Call( "ChatTextChanged", "" )
 	end
 	function hnchat.openChatbox(mode)
+		mode = mode or "Global"
 		hnchat.derma.Frame:MakePopup()
 		hnchat.derma.Frame:SetVisible(true)
 
@@ -86,9 +94,9 @@ hook.Add( "Initialize", "hnchat", function()
 			surface.DrawOutlinedRect( x + i, y + i, w - i * 2, h - i * 2 )
 		end
 	end
-	oldSay = oldSay or Say
+	oldSay = Say
 	function Say( txt, team )
-		if util.NetworkStringToID( "hnnchat_say_send" ) ~= 0 then
+		if util.NetworkStringToID( "hnnchat_say" ) ~= 0 then
 			net.Start( "hnchat_say", false )
 				net.WriteString(txt)
 				net.WriteBool(team)
@@ -210,7 +218,7 @@ hook.Add( "Initialize", "hnchat", function()
 		end
 		hnchat.derma.chat.RichText.ActionSignal = function( self, signalName, signalValue )
 			if ( signalName == "TextClicked" ) then
-					gui.OpenURL(signalValue)
+				gui.OpenURL(signalValue)
 			end
 		end
 
@@ -260,6 +268,7 @@ hook.Add( "Initialize", "hnchat", function()
 					elseif hnchat.derma.chat.msgmode.curtype == 3 then
 						RunConsoleCommand( "saysound", str )
 					elseif hnchat.derma.chat.msgmode.curtype == 4 then
+						local cmd = 
 						LocalPlayer():ConCommand("\""..str.."\"")
 					else
 						Say( "\""..str.."\"", false )
@@ -369,35 +378,34 @@ hook.Add( "Initialize", "hnchat", function()
 			menu:Open()
 		end
 
-	--[[local files, dir = file.Find( "hnchat/modules/*", "LUA" )
-	for k, v in next, files do
-		local name = string.gsub( v, "%plua", "" )
-		hnchat.derma[name] = include("hnchat/modules/" .. v)
-		if name == "config" or name == "dms" or name == "lua" then
-			table.remove( files, k )
-		end
-	end]]
-	hnchat.derma.dms = include("hnchat/modules/dms.lua")
-	hnchat.derma.lua = include("hnchat/modules/lua.lua")
-	hnchat.derma.config = include("hnchat/modules/config.lua")
-
 	hnchat.derma.tabs:AddSheet( "Global", hnchat.derma.chat, "icon16/comments.png", false, false, "Chat" )
-	if hnchat.derma.dms then hnchat.derma.tabs:AddSheet( "PM", hnchat.derma.dms, "icon16/group.png", false, false, "PM" ) end
+	hnchat.derma.dms = include("hnchat/base/dms.lua")
 	local spacer = hnchat.derma.tabs:AddSheet( "", vgui.Create( "DPanel" ) )
 		spacer.Tab.Paint = function(self) return false end
 		spacer.Tab:SetEnabled(false)
 		spacer.Tab:SetCursor("arrow")
-		local spacer2 = hnchat.derma.tabs:AddSheet( "", vgui.Create( "DPanel" ) )
-		spacer2.Tab.Paint = function(self) return false end
-		spacer2.Tab:SetEnabled(false)
-		spacer2.Tab:SetCursor("arrow")
-	if hnchat.derma.lua then hnchat.derma.tabs:AddSheet( "Lua", hnchat.derma.lua, "icon16/page_edit.png", false, false, "Lua" ) end
-	if hnchat.derma.config then hnchat.derma.tabs:AddSheet( "Settings", hnchat.derma.config, "icon16/wrench_orange.png", false, false, "Config" ) end
+		local spacer = hnchat.derma.tabs:AddSheet( "", vgui.Create( "DPanel" ) )
+		spacer.Tab.Paint = function(self) return false end
+		spacer.Tab:SetEnabled(false)
+		spacer.Tab:SetCursor("arrow")
+	hnchat.derma.lua = include("hnchat/base/lua.lua")
+	hnchat.derma.config = include("hnchat/base/config.lua")
 
-	--[[for k, v in next, files do
+	local files, dir = file.Find( "hnchat/modules/*", "LUA" )
+	for k, v in next, files do
+		if (k%2==0) then
+			local spacer = hnchat.derma.tabs:AddSheet( "", vgui.Create( "DPanel" ) )
+			spacer.Tab.Paint = function(self) return false end
+			spacer.Tab:SetEnabled(false)
+			spacer.Tab:SetCursor("arrow")
+			local spacer = hnchat.derma.tabs:AddSheet( "", vgui.Create( "DPanel" ) )
+			spacer.Tab.Paint = function(self) return false end
+			spacer.Tab:SetEnabled(false)
+			spacer.Tab:SetCursor("arrow")
+		end
 		local name = string.gsub( v, "%plua", "" )
-		hnchat.derma.tabs:AddSheet( name, hnchat.derma[name], nil, false, false, name )
-	end]]
+		hnchat.derma[name] = include("hnchat/modules/" .. v)
+	end
 
 	hnchat.derma.Frame.CloseButton = vgui.Create( "DButton", hnchat.derma.Frame )
 	hnchat.derma.Frame.CloseButton:SetSize( 42, 16 )
@@ -516,13 +524,6 @@ hook.Add( "Initialize", "hnchat", function()
 		--chathud:AddText(green, text)
 	end)
 
-	net.Receive("hnchat_local_receive", function(len)
-		local ply = net.ReadEntity()
-		local txt = net.ReadString()
-
-		chat.AddText( Color(24,161,35), "(Local) ", ply, color_white, ": " .. txt )
-	end)
-
 	hook.Add( "PlayerBindPress", "hnchat", function( ply, bind, pressed )
 		if bind:find("messagemode2") then
 			RunConsoleCommand("hnchat_open")
@@ -541,21 +542,35 @@ hook.Add( "Initialize", "hnchat", function()
 		RunConsoleCommand("hnchat_open")
 		hnchat.derma.chat.msgmode.curtype = 2
 	end)
-	concommand.Add( "hnchat_open_mode",function()
-		-- idk what this does lol
-	end)
 	concommand.Add( "hnchat_open_team",function() -- open chat in team
 		RunConsoleCommand("hnchat_open")
 		hnchat.derma.chat.msgmode.curtype = 1
 	end)
 
+	local oldClose = chat.Close
+	local oldOpen = chat.Open
+	local oldPos = chat.GetChatBoxPos
+	local oldSize = chat.GetChatBoxSize
+
+	function chat.Close() 
+		hnchat.closeChatbox()
+	end
+	function chat.Open()
+		hnchat.openChatbox()
+	end
+	function chat.GetChatBoxPos()
+		return hnchat.derma.Frame:GetPos()
+	end
+	function chat.GetChatBoxSize()
+		return hnchat.derma.Frame:GetSize()
+	end
+
 	function hnchat.UnLoad()
-		-- restore original functions
 		chat.AddText = oldChatAddText
-		--[[chat.GetChatBoxPos = oldPos
+		chat.GetChatBoxPos = oldPos
 		chat.GetChatBoxSize = oldSize
 		chat.Open = oldOpen
-		chat.Close = oldClose]]
+		chat.Close = oldClose
 		Say = oldSay
 
 		-- set old functions to nil for whatever reason because im paranoid
