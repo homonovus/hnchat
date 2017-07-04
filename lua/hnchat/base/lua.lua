@@ -184,7 +184,7 @@ local function fixupURL(url)
 	if url and isstring(url) then
 		url = url:Trim()
 
-		url = url:gsub([[^http%://onedrive%.live%.com/redir?]],[[https://onedrive.live.com/download?]])
+		url = url:gsub( "^http%://onedrive%.live%.com/redir?", "https://onedrive.live.com/download?")
 		url = url:gsub( "pastebin.com/([a-zA-Z0-9]*)$", "pastebin.com/raw.php?i=%1")
 		url = url:gsub( "hastebin.com/([a-zA-Z0-9]*)$", "hastebin.com/raw/%1")
 		url = url:gsub( "github.com/([a-zA-Z0-9_]+)/([a-zA-Z0-9_]+)/blob/", "github.com/%1/%2/raw/")
@@ -299,6 +299,8 @@ AddButton(lua.topbar, true, "Run", "icon16/cog_go.png", 55, function(self, w, h)
 	draw.SimpleText( self:GetText(), "DermaDefault", w/2, h/2, textcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 	return true
 end,function(self)
+	-- <0:0:41908082|<color=51,0,221>homonovu><New 3>
+	-- <steamid|player name><file name>
 	luaf.RunOnSelf(lua.html:GetCode(),LocalPlayer())
 end)
 AddButton(lua.topbar, true, "Server", "icon16/server.png", nil, nil, function()
@@ -344,7 +346,26 @@ AddButton(lua.leftbar, false, "Load", "icon16/script_edit.png", 74, nil, functio
 
 	menu:Open()
 end)
-AddButton(lua.leftbar, false, "Open", "icon16/folder_explore.png", 74)
+AddButton(lua.leftbar, false, "Open", "icon16/folder_explore.png", 74, nil, function()
+	local fr = vgui.Create("DFrame")
+	fr:SetSize(310,340)
+	fr:SetTitle("File Browser")
+	fr:MakePopup()
+
+	local br = vgui.Create("DTree", fr)
+	br:Dock(FILL)
+
+	br.OnNodeSelected = function(self, node)
+		local name = node:GetFolder() or node:GetFileName() or ""
+		if not file.IsDir(name,"GAME") then
+			lua.html:Call('editor.setValue("'..string.JavascriptSafe(file.Read(name,"GAME"))..'");')
+			fr:Close()
+		end
+	end
+
+	br:AddNode( "lua" ):MakeFolder("lua","GAME",true)
+	br:AddNode( "data" ):MakeFolder("data","GAME",true)
+end)
 local spacer = vgui.Create("DPanel", lua.leftbar)
 	spacer:Dock(TOP)
 	spacer:SetTall(8)
