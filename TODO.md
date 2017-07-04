@@ -31,12 +31,13 @@
 - [x] figure out how to get value of editor from lua: maybe window.gmodinterface???
 - [x] return value of editor from dhtml: js -> lua 
 - [x] get current code from editor, ~~stop storing in temp var~~
-- [ ] new sessions from editor itself
+- [ ] call new sessions from editor
 - [ ] store session in lua panel
 - [x] window.gmodinterface
+- [ ] load/save functionality (data/lua_editor)
 - [ ] functionality for the buttons lol
 - [ ] fix buttons' icons
-- [ ] auto raw from haste/pastebin
+- [x] auto raw from haste/pastebin
 - [ ] give lua editor tabs (try to keep one dhtml)
 - [ ] tab dragging
 
