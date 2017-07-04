@@ -30,10 +30,10 @@
 # Lua Editor
 - [x] figure out how to get value of editor from lua: maybe window.gmodinterface???
 - [x] return value of editor from dhtml: js -> lua 
-- [ ] get current code from editor, stop storing in temp var
+- [x] get current code from editor, ~~stop storing in temp var~~
 - [ ] new sessions from editor itself
 - [ ] store session in lua panel
-- [ ] window.gmodinterface
+- [x] window.gmodinterface
 - [ ] functionality for the buttons lol
 - [ ] fix buttons' icons
 - [ ] auto raw from haste/pastebin
