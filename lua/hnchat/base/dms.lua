@@ -67,9 +67,9 @@ function hnchat.addDM(ply)
 	dmstuff.tabs.tabs[sid].Think = function(self)
 		if self:IsVisible() then
 			self.unread = false
-			if self:GetParent():IsVisible() then
+			--[[if self:GetParent():IsVisible() then
 				dmstuff.unread = (dmstuff.unread >= 1 and dmstuff.unread - 1 or 0)
-			end
+			end]]
 		end
 	end
 
@@ -151,7 +151,7 @@ net.Receive("hnchat_dm", function(len)
 	hnchat.AddText(dmstuff.tabs.tabs[ply:SteamID()], ply, color_white, ": "..txt )
 	if not dmstuff.tabs.tabs[ply:SteamID()]:IsVisible() or not hnchat.derma.Frame:IsVisible() then
 		dmstuff.tabs.tabs[ply:SteamID()].unread = true
-		dmstuff.unread = dmstuff.unread + 1
+		--dmstuff.unread = dmstuff.unread + 1
 		if pm_hud_notify_sound:GetBool() then surface.PlaySound("friends/message.wav") end
 		if (pm_hud_notify:GetBool() and not pm_hud:GetBool()) then chat.AddText(Color(200,100,100),"[[ ", color_white, "PM From ", ply, Color(200,100,100), " ]]") end
 		if (pm_hud:GetBool() and not pm_hud_notify:GetBool()) or (pm_hud_notify:GetBool() and pm_hud:GetBool()) then chat.AddText(Color(200,100,100),"[", color_white, "PM", Color(200,100,100), "] ", ply, color_white, ": "..txt) end
@@ -174,7 +174,7 @@ end)
 
 dmstuff = vgui.Create("DPanel")
 dmstuff.Paint = function() return false end
-dmstuff.unread = 0
+--dmstuff.unread = 0
 dmstuff.tabs = vgui.Create( "DPropertySheet", dmstuff )
 dmstuff.tabs:Dock(FILL)
 dmstuff.tabs:SetFadeTime(0)
@@ -309,7 +309,7 @@ end
 
 local t = hnchat.derma.tabs:AddSheet( "PM", dmstuff, "icon16/group.png", false, false, "PM" )
 
-t.Tab.Paint = function(self, w, h)
+--[[t.Tab.Paint = function(self, w, h)
 	if dmstuff.unread > 0 and not self:IsActive() then
 		local col= Color(0,0,0,0)
 		local a = math.Clamp(math.abs(math.cos(RealTime())*255),0,255)--TimedCos( 2, 0, 255, 3 )
@@ -320,6 +320,6 @@ t.Tab.Paint = function(self, w, h)
 	else
 		derma.SkinHook("Paint","Tab",self,w,h)
 	end
-end
+end]]
 
 return t
