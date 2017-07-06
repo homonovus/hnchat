@@ -19,6 +19,7 @@
 - [ ] add red color to chat mode button
 - [x] fix chatsounds integration
 - [ ] show local players
+- [ ] auto complete stuff
 
 # DM Chat
 - [ ] group dms: rewrite the net, recipients -> table (should be ez)
