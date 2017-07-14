@@ -1,9 +1,8 @@
-if not hnchat then return end
+local dmtag = "hnchat_dm"
 
 if SERVER then
-	hnchat.net.dm_send = util.AddNetworkString("hnchat_dm")
-	hnchat.net.dm_receive = util.AddNetworkString("hnchat")
-	hnchat.net.dm_send_sv = function(len, ply)
+	util.AddNetworkString(dmtag)
+	net.Receive(dmtag, function(len, ply)
 		local target = net.ReadEntity()
 		local txt = net.ReadString()
 
@@ -11,15 +10,16 @@ if SERVER then
 			if not target:IsPlayer() then return end--table.remove(plys, k) end
 		--end
 
-		net.Start( "hnchat_dm", false )
+		net.Start( dmtag, false )
 			net.WriteEntity(ply)
 			net.WriteString(txt)
 		net.Send(target)
-	end
-	net.Receive("hnchat_dm", hnchat.net.dm_send_sv )
+	end )
 
 	return
 end
+
+if not hnchat then return end
 
 local hnchat_pm_disable = CreateClientConVar( "hnchat_pm_disable", 0 )
 local hnchat_pm_friendsonly = CreateClientConVar( "hnchat_pm_friendsonly", 0 )
@@ -125,7 +125,6 @@ player.FindByName = player.FindByName or function(name)
 	end
 end
 function dmPlayer(ply, txt)
-	if util.NetworkStringToID("hnchat_dm") == 0 then error("no networking?!?") return end
 	if hnchat_pm_disable:GetBool() or not IsValid(ply) then return end
 
 	if not dmstuff.tabs.tabs[ply:SteamID()] then hnchat.addDM(ply) end
@@ -134,13 +133,13 @@ function dmPlayer(ply, txt)
 	hnchat.AddText( dmstuff.tabs.tabs[ply:SteamID()], LocalPlayer(), color_white, ": ", txt )
 
 	if pm_chatsounds:GetBool() then RunConsoleCommand("saysound", txt) end
-	net.Start( "hnchat_dm", false )
+	net.Start( dmtag, false )
 		net.WriteEntity(ply)
 		net.WriteString(txt)
 	net.SendToServer()
 end
 
-net.Receive("hnchat_dm", function(len)
+net.Receive(dmtag, function(len)
 	if hnchat_pm_disable:GetBool() then return end
 	local ply = net.ReadEntity()
 	local txt = net.ReadString()
@@ -170,6 +169,14 @@ cvars.AddChangeCallback( "hnchatbox_history_font",function(cmd, old, new)
 	for k, v in next, dmstuff.tabs.tabs do
 		v:PerformLayout()
 	end
+end)
+cvars.AddChangeCallback( "hnchatbox_font_input", function( cmd, old, new)
+	if new == old then return end
+
+	dmstuff.TextEntry:SetFont(new)
+	dmstuff.TextEntry:ApplySchemeSettings()
+
+	return
 end)
 
 dmstuff = vgui.Create("DPanel")

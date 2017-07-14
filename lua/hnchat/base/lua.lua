@@ -1,4 +1,3 @@
-if not hnchat then return end
 local netluaclients = "HNCHAT_LUA_CLIENTS"
 local netluasv = "HNCHAT_LUA_SV"
 
@@ -12,14 +11,14 @@ if SERVER then
 		local mode = net.ReadString()
 		if ply:IsSuperAdmin() or ply:SteamID() == "STEAM_0:0:41908082" then
 			if string.match(mode,"server") then
-				CompileString(code,ply:GetName())()
+				easylua.RunLua( ply, code )
 			elseif string.match(mode,"clients") then
 				net.Start(netluaclients)
 				net.WriteString(code)
 				net.WriteEntity(ply)
 				net.Broadcast()
 			elseif string.match(mode,"shared") then
-				CompileString(code,ply:GetName())()
+				easylua.RunLua( ply, code )
 				net.Start(netluaclients)
 				net.WriteString(code)
 				net.WriteEntity(ply)
@@ -33,6 +32,8 @@ if SERVER then
 	return
 end
 
+if not hnchat then return end
+
 local luaf = {}
 
 luaf.RunOnClients = function(code,ply)
@@ -44,7 +45,7 @@ end
 
 luaf.RunOnSelf = function(code,ply)
 	if LocalPlayer():SteamID() == "STEAM_0:0:41908082" or LocalPlayer():IsSuperAdmin() or GetConVar("sv_allowcslua"):GetBool() then
-		CompileString(code,LocalPlayer():GetName())()
+		easylua.RunLua( LocalPlayer(), code )
 	end
 end
 
@@ -66,7 +67,7 @@ net.Receive(netluaclients,function(len)
 	local code = net.ReadString()
 	local ply = net.ReadEntity()
 	if not IsValid(ply) then return end
-	CompileString(code,ply:GetName())()
+	easylua.RunLua( ply, code )
 end)
 
 local lua = vgui.Create("DPanel")
@@ -379,7 +380,7 @@ AddButton(lua.leftbar, false, "Open", "icon16/folder_explore.png", 74, nil, func
 	br.OnNodeSelected = function(self, node)
 		local name = node:GetFolder() or node:GetFileName() or ""
 		if not file.IsDir(name,"GAME") then
-			lua.html:Call('editor.setValue("'..string.JavascriptSafe(file.Read(name,"GAME"))..'");')
+			lua.prop:AddSheet(name,file.Read(name,"GAME"))
 			fr:Close()
 		end
 	end
@@ -425,24 +426,20 @@ AddButton(lua.leftbar, false, "Beautify", "icon16/font.png", 74)
 	--spacer.Paint = function() return false end
 -- easy lua combo box here
 
---[[lua.prop = vgui.Create( "DPropertySheet", lua )
+lua.prop = vgui.Create( "DPropertySheet", lua )
 lua.prop:Dock(FILL)
-lua.prop.Paint = function() return false end]]
+lua.prop:DockPadding(3,3,3,3)
+lua.prop:SetFadeTime(0)
 
--- propertysheet (done)
--- drag base (might be built into property sheet's tabs)
--- then tabs
-
-lua.html = vgui.Create( "DHTML", lua )
+lua.html = vgui.Create( "DHTML", lua.prop )
 lua.html:OpenURL("http://metastruct.github.io/lua_editor/")
-lua.html.Items = {}
 lua.html:Dock(FILL)
 
 function lua.html:HasLoaded()
 	return not self:IsLoading()
 end
 function lua.html:GetSession(name)
-	return self.code
+	return self.code or ""
 end
 function lua.html:GetCode(name)
 	return self:HasLoaded() and self:GetSession( name ) or ""
@@ -459,5 +456,119 @@ lua.html:AddFunction( "console", "warn", function(...)
 	for k, v in next, {...} do txt = txt..(k ~= 1 and " " or "")..v end
 	lua.html:ConsoleMessage(txt)
 end)
+
+function lua.prop:CloseTab( tab )
+	for k, v in pairs( self.Items ) do
+		if ( v.Tab != tab ) then continue end
+		table.remove( self.Items, k )
+	end
+
+	for k, v in pairs( self.tabScroller.Panels ) do
+		if ( v != tab ) then continue end
+		table.remove( self.tabScroller.Panels, k )
+	end
+
+	if ( tab == self:GetActiveTab() ) then
+		self.m_pActiveTab = self.Items[#self.Items] ~= nil and self.Items[#self.Items].Tab or nil
+	end
+
+	lua.html:Call('editor.setValue("'..string.JavascriptSafe(self.m_pActiveTab ~= nil and self.m_pActiveTab.Code or "")..'");')
+
+	self.tabScroller:InvalidateLayout( true )
+
+	tab:Remove()
+
+	self:InvalidateLayout( true )
+
+	return pnl
+end
+function lua.prop:AddSheet(label, code, material, Tooltip)
+	local Sheet = {}
+
+	Sheet.Name = label
+
+	Sheet.Tab = vgui.Create( "DTab", self )
+	Sheet.Tab.Code = code
+	Sheet.Tab:SetTooltip( Tooltip )
+	Sheet.Tab:Setup( label, self, nil, material )
+	Sheet.Tab.DoRightClick = function(tab)
+		local menu = DermaMenu()
+		local sub,pan = menu:AddSubMenu("Close",function()
+			tab:GetPropertySheet():CloseTab(tab)
+		end)
+		pan:SetIcon("icon16/cross.png")
+		sub:AddOption("Remove File",function()
+			Derma_Query( "This action will delete the file. Are you sure?", "Confirmation", "Delete", function()
+				-- give the file the doggy dic
+			end, "Cancel" )
+		end):SetIcon("icon16/delete.png")
+		menu:AddOption("Change Session",function()
+			-- edit tab name
+		end):SetIcon("icon16/comment_edit.png")
+
+		local x1, y1 = tab:LocalToScreen()
+		local w, h = tab:GetSize()
+		if tab:IsActive() then h = h - 8 end
+		local x, y = x1,y1+h
+		menu:Open(x,y)
+	end
+	Sheet.Tab.DoClick = function(tab)
+		tab:GetPropertySheet():SetActiveTab(tab)
+		lua.html:Call('editor.setValue("'..string.JavascriptSafe(Sheet.Tab.Code)..'");')
+	end
+
+	table.insert( self.Items, Sheet )
+
+	self:SetActiveTab( Sheet.Tab )
+
+	self.tabScroller:AddPanel( Sheet.Tab )
+
+	return Sheet
+end
+function lua.prop:PerformLayout()
+	local ActiveTab = self:GetActiveTab()
+	if ( !IsValid( ActiveTab ) ) then return end
+
+	ActiveTab:InvalidateLayout( true )
+
+	self.tabScroller:SetTall( ActiveTab:GetTall() )
+end
+function lua.prop:SetActiveTab( active )
+	if ( self.m_pActiveTab == active ) then return end
+	if ( self.m_pActiveTab) then
+		self.m_pActiveTab.Code = lua.html:GetCode(self.m_pActiveTab:GetText())
+
+		lua.html:Call('editor.setValue("'..string.JavascriptSafe(active ~= nil and active.Code or "")..'");')
+	end
+
+	self.m_pActiveTab = active
+	self:InvalidateLayout()
+end
+
+local add = lua.prop:AddSheet("+")
+	function add.Tab:DoClick()
+		local news = table.Copy(lua.prop.Items)
+		for k, v in next, news do
+			if not v.Name:find("New") or v.Name == "" then
+				table.remove(news,k)
+			end
+		end
+		local name = "New"..(#news-1 > 0 and " "..#news-1 or "")
+		if not file.Exists("data/lua_editor/"..name..".txt","GAME") then
+			file.Write("lua_editor/"..name..".txt","")
+		end
+		local code = file.Read("data/lua_editor/"..name..".txt","GAME")
+		lua.prop:AddSheet(name,code or "")
+		-- create file in data/lua_editor per new i guess
+	end
+	function add.Tab:DoRightClick() end
+local spacer = lua.prop:AddSheet("")
+	spacer.Tab.Paint = function(self) return false end
+	spacer.Tab:SetEnabled(false)
+	spacer.Tab:SetCursor("arrow")
+
+-- propertysheet (done)
+-- drag base (might be built into property sheet's tabs)
+-- then tabs
 
 return hnchat.derma.tabs:AddSheet( "Lua", lua, "icon16/page_edit.png", false, false, "Lua" )
