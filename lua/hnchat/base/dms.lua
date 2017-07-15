@@ -1,9 +1,8 @@
-if not hnchat then return end
+local dmtag = "hnchat_dm"
 
 if SERVER then
-	hnchat.net.dm_send = util.AddNetworkString("hnchat_dm_send")
-	hnchat.net.dm_receive = util.AddNetworkString("hnchat_dm_receive")
-	hnchat.net.dm_send_sv = net.Receive("hnchat_dm_send",function(len, ply)
+	util.AddNetworkString(dmtag)
+	net.Receive(dmtag, function(len, ply)
 		local target = net.ReadEntity()
 		local txt = net.ReadString()
 
@@ -11,14 +10,16 @@ if SERVER then
 			if not target:IsPlayer() then return end--table.remove(plys, k) end
 		--end
 
-		net.Start( "hnchat_dm_receive", false )
+		net.Start( dmtag, false )
 			net.WriteEntity(ply)
 			net.WriteString(txt)
 		net.Send(target)
-	end)
+	end )
 
 	return
 end
+
+if not hnchat then return end
 
 local hnchat_pm_disable = CreateClientConVar( "hnchat_pm_disable", 0 )
 local hnchat_pm_friendsonly = CreateClientConVar( "hnchat_pm_friendsonly", 0 )
@@ -29,11 +30,11 @@ local pm_hud_notify = CreateClientConVar( "pm_hud_notify", 0 )
 local pm_hud_notify_sound = CreateClientConVar( "pm_hud_notify_sound", 0 )
 local pm_notify_window = CreateClientConVar( "pm_notify_window", 0 )
 concommand.Add( "pm", function(ply, cmd, args)
-	if not args or not args[1] or args[1] == ""or not player.GetByName(args[1]) then
+	if not args or not args[1] or args[1] == ""or not player.FindByName(args[1]) then
 		Msg("player not found\n")
 	else
 		local txt = ""
-		local ply = player.GetByName(args[1])
+		local ply = player.FindByName(args[1])
 		for k, v in next, args do txt = k ~= 1 and (txt..(k ~= 2 and " " or "")..v) or txt end
 		dmPlayer(ply, txt)
 	end
@@ -55,7 +56,7 @@ function hnchat.addDM(ply)
 	dmstuff.tabs.tabs[sid] = vgui.Create("RichText")
 	dmstuff.tabs.tabs[sid]:Dock(FILL)
 	dmstuff.tabs.tabs[sid].PerformLayout = function( self )
-		self:SetFontInternal( "DermaDefault" )
+		self:SetFontInternal( GetConVar("hnchatbox_history_font"):GetString() )
 		self:SetFGColor(Color( 255, 255, 255, 128))
 	end
 	dmstuff.tabs.tabs[sid].Paint = function( self, w ,h )
@@ -66,100 +67,127 @@ function hnchat.addDM(ply)
 	dmstuff.tabs.tabs[sid].Think = function(self)
 		if self:IsVisible() then
 			self.unread = false
+			--[[if self:GetParent():IsVisible() then
+				dmstuff.unread = (dmstuff.unread >= 1 and dmstuff.unread - 1 or 0)
+			end]]
 		end
 	end
 
 	local t = dmstuff.tabs:AddSheet( ply:UndecorateNick(), dmstuff.tabs.tabs[sid], nil, false, false, ply:UndecorateNick() )
+	t.Tab.DoClick = function(self)
+		self:GetPropertySheet():SetActiveTab( self )
+		self:GetPanel():SetVisible(true)
+	end
 	t.Tab.DoRightClick = function(self)
 		dmstuff.tabs:CloseTab( t.Tab, true )
 		dmstuff.tabs.tabs[sid] = nil
 	end
 	t.Tab.GetTabHeight = function() return 20 end
 	t.Tab.Paint = function(self, w, h)
-		local col, textcol
+		local col, textcol = Color(0,0,0,0), Color(81,81,81)
 
 		if self:IsActive() then
 			col = Color(225,228,232)
-			surface.SetDrawColor(Color(116,170,232))
-			surface.DrawRect( 0, h-2, w, 2 )
 		end
 
 		if self:IsHovered() then
 			col = Color(208,208,208)
 			textcol = Color(96,42,180)
-		elseif not self:IsHovered() then
-			col = Color(0,0,0,0)
-			textcol = Color(81,81,81)
 		end
 
 		if self:IsDown() then
 			textcol = color_white
 		end
-		
-		if dmstuff.tabs.tabs[sid].unread then
-			col = Color(math.Clamp(math.abs(math.sin(RealTime()*5)*255),225	,255),228,232)
+
+		if self:GetPanel().unread then
+			local r = TimedCos( 1, 196, 222, 1 )
+			local g = TimedCos( 1, 196, 222, 1 )
+			col = Color(r,g,222)
 		end
 
 		surface.SetDrawColor(col)
 		surface.DrawRect(0,0,w,h)
 		draw.SimpleText( self:GetText(), "DermaDefault", w/2, h/2, textcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+
+		if self:IsActive() then
+			surface.SetDrawColor(Color(116,170,232))
+			surface.DrawRect( 0, h-2, w, 2 )
+		end
+
 		return true
 	end
 
-	hnchat.AddText(dmstuff.tabs.tabs[sid], "Chatting with ", ply)
+	hnchat.AddText(dmstuff.tabs.tabs[sid], color_white, "Chatting with ", ply)
 end
-player.GetByName = function(name)
+player.FindByName = player.FindByName or function(name)
 	for k, v in next, player.GetAll() do
 		if string.find( string.lower(v:UndecorateNick()), string.lower(name) ) then return v end
 	end
 end
 function dmPlayer(ply, txt)
-	if util.NetworkStringToID("hnchat_dm_send") == 0 or hnchat_pm_disable:GetBool() then error("no networking?!?") return end
+	if hnchat_pm_disable:GetBool() or not IsValid(ply) then return end
+
 	if not dmstuff.tabs.tabs[ply:SteamID()] then hnchat.addDM(ply) end
 
 	chat.AddText(Color(200,100,100), "[", color_white, "PM to ", ply, Color(200,100,100), "] ", LocalPlayer(), color_white, ": ", txt)
 	hnchat.AddText( dmstuff.tabs.tabs[ply:SteamID()], LocalPlayer(), color_white, ": ", txt )
 
 	if pm_chatsounds:GetBool() then RunConsoleCommand("saysound", txt) end
-	net.Start( "hnchat_dm_send", false )
+	net.Start( dmtag, false )
 		net.WriteEntity(ply)
 		net.WriteString(txt)
 	net.SendToServer()
 end
 
-net.Receive("hnchat_dm_receive", function(len)
+net.Receive(dmtag, function(len)
 	if hnchat_pm_disable:GetBool() then return end
-
 	local ply = net.ReadEntity()
 	local txt = net.ReadString()
+	if hnchat_pm_friendsonly:GetBool() and not (ply:GetFriendStatus() == "friend") then return end
 
 	if not dmstuff.tabs.tabs[ply:SteamID()] then hnchat.addDM(ply) end
 
-	hnchat.AddText(dmstuff.tabs.tabs[ply:SteamID()], ply, color_white, ": ", txt )
-	--if not dmstuff.tabs:GetActiveTab():GetPanel():IsVisible() then
+	hnchat.AddText(dmstuff.tabs.tabs[ply:SteamID()], ply, color_white, ": "..txt )
+	if not dmstuff.tabs.tabs[ply:SteamID()]:IsVisible() or not hnchat.derma.Frame:IsVisible() then
 		dmstuff.tabs.tabs[ply:SteamID()].unread = true
+		--dmstuff.unread = dmstuff.unread + 1
 		if pm_hud_notify_sound:GetBool() then surface.PlaySound("friends/message.wav") end
-		if pm_hud_notify:GetBool() then chat.AddText(Color(200,100,100),"[[ ", color_white, "PM From ", ply, Color(200,100,100), " ]]") end
-	--end
-	if pm_notify_window:GetInt() ~= 0 then
-		--if ply:GetFriendStatus() == "friend" and pm_notify_window:GetInt() <= 2
+		if (pm_hud_notify:GetBool() and not pm_hud:GetBool()) then chat.AddText(Color(200,100,100),"[[ ", color_white, "PM From ", ply, Color(200,100,100), " ]]") end
+		if (pm_hud:GetBool() and not pm_hud_notify:GetBool()) or (pm_hud_notify:GetBool() and pm_hud:GetBool()) then chat.AddText(Color(200,100,100),"[", color_white, "PM", Color(200,100,100), "] ", ply, color_white, ": "..txt) end
+	end
+	if (pm_notify_window:GetInt() >= 2 and (ply:GetFriendStatus() == "friend")) or pm_notify_window:GetInt() == 1 then
 		if system.IsWindows() and not system.HasFocus() then system.FlashWindow() end
 	end
 end)
 
 concommand.Add( "hnchat_open_pm",function() 
 	hnchat.openChatbox("PM")
-	hnchat.derma.dms.TextEntry:RequestFocus()
+	dmstuff.TextEntry:RequestFocus()
+end)
+
+cvars.AddChangeCallback( "hnchatbox_history_font",function(cmd, old, new)
+	for k, v in next, dmstuff.tabs.tabs do
+		v:PerformLayout()
+	end
+end)
+cvars.AddChangeCallback( "hnchatbox_font_input", function( cmd, old, new)
+	if new == old then return end
+
+	dmstuff.TextEntry:SetFont(new)
+	dmstuff.TextEntry:ApplySchemeSettings()
+
+	return
 end)
 
 dmstuff = vgui.Create("DPanel")
 dmstuff.Paint = function() return false end
+--dmstuff.unread = 0
 dmstuff.tabs = vgui.Create( "DPropertySheet", dmstuff )
 dmstuff.tabs:Dock(FILL)
 dmstuff.tabs:SetFadeTime(0)
 dmstuff.tabs:SetPadding(0)
 dmstuff.tabs.Paint = function() end
-dmstuff.tabs.CloseTab = function( self, tab, bRemovePanelToo )
+function dmstuff.tabs:CloseTab(tab, bRemovePanelToo )
 		for k, v in next, self.Items do
 			if ( v.Tab != tab ) then continue end
 			table.remove( self.Items, k )
@@ -186,6 +214,34 @@ dmstuff.tabs.CloseTab = function( self, tab, bRemovePanelToo )
 		self:InvalidateLayout( true )
 
 		return pnl
+end
+function dmstuff.tabs:AddSheet( label, panel, material, NoStretchX, NoStretchY, Tooltip )
+	if ( !IsValid( panel ) ) then return end
+
+	local Sheet = {}
+	Sheet.Name = label
+
+	Sheet.Tab = vgui.Create( "DTab", self )
+	Sheet.Tab:SetTooltip( Tooltip )
+	Sheet.Tab:Setup( label, self, panel, material )
+
+	Sheet.Panel = panel
+	Sheet.Panel.NoStretchX = NoStretchX
+	Sheet.Panel.NoStretchY = NoStretchY
+	Sheet.Panel:SetPos( self:GetPadding(), 20 + self:GetPadding() )
+	Sheet.Panel:SetVisible( false )
+	panel:SetParent( self )
+
+	table.insert( self.Items, Sheet )
+
+	--[[if ( !self:GetActiveTab() ) then
+		self:SetActiveTab( Sheet.Tab )
+		Sheet.Panel:SetVisible( false )
+	end]]
+
+	self.tabScroller:AddPanel( Sheet.Tab )
+
+	return Sheet
 end
 dmstuff.tabs.tabs = {}
 
@@ -258,4 +314,19 @@ dmstuff.TextEntry.OnKeyCodeTyped = function( self, key )
 	end
 end
 
-return dmstuff
+local t = hnchat.derma.tabs:AddSheet( "PM", dmstuff, "icon16/group.png", false, false, "PM" )
+
+--[[t.Tab.Paint = function(self, w, h)
+	if dmstuff.unread > 0 and not self:IsActive() then
+		local col= Color(0,0,0,0)
+		local a = math.Clamp(math.abs(math.cos(RealTime())*255),0,255)--TimedCos( 2, 0, 255, 3 )
+		col = Color(166,187,207,a)
+
+		surface.SetDrawColor(col)
+		surface.DrawRect(0,0,w,h)
+	else
+		derma.SkinHook("Paint","Tab",self,w,h)
+	end
+end]]
+
+return t

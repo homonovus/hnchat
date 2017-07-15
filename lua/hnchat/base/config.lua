@@ -126,8 +126,8 @@ configstuff.chat = AddSettingsGroup( configstuff.CList, "Chat", "icon16/comment.
 		AddSettingsOption( configstuff.chat.list, "Sounds on chat", "chatsounds_enabled", 1, 0 )
 		AddSettingsSpacer( configstuff.chat.list )
 		AddSettingsOption( configstuff.chat.list, "Autocomplete chat sounds", "chatsounds_autocomplete", 1, 0 )
+		AddSettingsSpacer( configstuff.chat.list )
 	end
-	AddSettingsSpacer( configstuff.chat.list )
 	AddSettingsOption( configstuff.chat.list, "> Green text", "hnchat_greentext", 1, 0 )
 	AddSettingsOption( configstuff.chat.list, "Highlight messages that mention you", "hnchat_highlight", 1, 0 )
 -- configstuff.chathud = AddSettingsGroup( configstuff.CList, "Chat HUD", "icon16/comments.png" )
@@ -150,7 +150,7 @@ configstuff.graphics = AddSettingsGroup( configstuff.CList, "Performance / Graph
 	AddSettingsOption( configstuff.graphics.list, "Water Refraction", "r_WaterDrawRefraction", 1, 0 )
 	if pac then AddSettingsOption( configstuff.graphics.list, "PAC (player outfits)", "pac_enable", 1, 0 )
 		AddSettingsSpacer(configstuff.graphics.list)
-		AddSettingsOption( configstuff.graphics.list, "    Sounds", "pac_enable_sound", 1, 0 )
+		if GetConVar("pac_enable_sound") then AddSettingsOption( configstuff.graphics.list, "    Sounds", "pac_enable_sound", 1, 0 ) end
 		AddSettingsOption( configstuff.graphics.list, "    Increase FPS", "pac_suppress_frames", 1, 0 )
 		AddSettingsOption( configstuff.graphics.list, "    Download Textures", "pac_enable_urltex", 1, 0 )
 		AddSettingsOption( configstuff.graphics.list, "    Download Models", "pac_enable_urlobj", 1, 0 )
@@ -173,7 +173,7 @@ if hnchat.derma.dms then configstuff.dms = AddSettingsGroup( configstuff.CList, 
 end
 configstuff.game = AddSettingsGroup( configstuff.CList, "Game", "icon16/joystick.png")
 	AddSettingsOption( configstuff.game.list, "Thirdperson", "ctp", 1, 0 )
-	AddSettingsOption( configstuff.game.list, "Hints", "cl_showhints", 0, 0 )
+	AddSettingsOption( configstuff.game.list, "Hints", "cl_showhints", 1, 0 )
 	AddSettingsSpacer( configstuff.game.list )
 	AddSettingsOption( configstuff.game.list, "ShowFPS 1", "cl_showfps", 1, 0 )
 	AddSettingsOption( configstuff.game.list, "ShowFPS 2", "cl_showfps", 2, 0 )
@@ -197,4 +197,4 @@ if playx or mediaplayer then configstuff.media = AddSettingsGroup( configstuff.C
 	if playx then AddSettingsSlider( configstuff.media.list, "Volume (PlayX)", "playx_volume", 2, 0, 100 ) end
 	if mediaplayer then AddSettingsSlider( configstuff.media.list, "Volume (Mediaplayer)", "mediaplayer_volume", 2, 0, 1 ) end
 end
-return configstuff
+return hnchat.derma.tabs:AddSheet( "Settings", configstuff, "icon16/wrench_orange.png", false, false, "Config" )
