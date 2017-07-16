@@ -35,14 +35,14 @@
 - [x] figure out how to get value of editor from lua: maybe window.gmodinterface???
 - [x] return value of editor from dhtml: js -> lua
 - [x] get current code from editor, ~~stop storing in temp var~~
-- [ ] call new sessions from editor
-- [ ] store session in lua panel
+- [x] call new sessions from editor
+- [x] store session in lua panel
 - [x] window.gmodinterface
-- [ ] load/save functionality (data/lua_editor)
-- [ ] functionality for the buttons lol
+- [x] load/save functionality (data/lua_editor)
+- [ ] functionality for the buttons lol (almost done)
 - [ ] fix buttons' icons
 - [x] auto raw from haste/pastebin
-- [ ] give lua editor tabs (try to keep one dhtml)      
+- [x] give lua editor tabs (try to keep one dhtml)      
 - [ ] tab dragging      
 
 # Settings
@@ -50,4 +50,4 @@
 - [x] remove small gap between settings groups
 - [x] add settings for PMs (you know the ones)
 - [ ] copy all of meta's settings lol
-- [ ] fix font selector not auto sizing parent
+- [ ] fix font selector tab not auto sizing parent
