@@ -212,8 +212,7 @@ hook.Add( "Initialize", "hnchat", function()
 
 	hook.Add( "PlayerBindPress", "hnchat", function( ply, bind, pressed )
 		if bind:find("messagemode2") then
-			RunConsoleCommand("hnchat_open")
-			hnchat.derma.chat.msgmode.curtype = 1
+			RunConsoleCommand("hnchat_open_team")
 			return true
 		elseif bind:find("messagemode") then
 			RunConsoleCommand("hnchat_open")

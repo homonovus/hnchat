@@ -13,7 +13,7 @@ if SERVER then
 
 		net.Start( localtag, false )
 			net.WriteEntity(ply)
-			net.WriteString(txt)
+			net.WriteString(msg)
 		net.Send(plys)
 	end)
 	net.Receive( saytag, function(len,ply)
@@ -355,11 +355,7 @@ net.Receive(localtag,function()
 	local ply = net.ReadEntity()
 	local msg = net.ReadString()
 
-	extrashit(hchat.RichText)
-
-	hchat.RichText:InsertColorChange(24,161,35,255)
-	hchat.RichText:AppendText("(Local) ")
-	gamemode.Call("OnPlayerChat", ply, msg, false, not ply:Alive())
+	chat.AddText( Color(24,161,35,255), "(Local) ", ": "..msg )
 end)
 
 hook.Add("ChatText", "hnchat", function(idx, name, text, type)
