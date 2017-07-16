@@ -14,6 +14,7 @@
 - [x] different fonts for richtext/textentry
 - [ ] scale textentry's with font's size
 - [ ] make textentry's bigger with more lines
+- [ ] use easylua funcs in place of my own lol
 
 # Global Chat
 - [ ] add in emoji picker, etc
