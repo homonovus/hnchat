@@ -355,7 +355,7 @@ net.Receive(localtag,function()
 	local ply = net.ReadEntity()
 	local msg = net.ReadString()
 
-	chat.AddText( Color(24,161,35,255), "(Local) ", ": "..msg )
+	chat.AddText( Color(24,161,35,255), "(Local) ", ply, color_white, ": "..msg )
 end)
 
 hook.Add("ChatText", "hnchat", function(idx, name, text, type)
