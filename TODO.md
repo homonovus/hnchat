@@ -44,11 +44,11 @@
 - [x] auto raw from haste/pastebin
 - [x] give lua editor tabs (try to keep one dhtml)      
 - [ ] tab dragging
-- [ ] force cursor inside html when holding mouse inside dhtml (BUT WHY FUCKING `gmodinterface.onmousedown` LIKE WTF)
+- [ ] force cursor inside html when holding mouse inside dhtml (about 50% done)
 - [ ] fix tab rendering when switching tabs
-- [ ] right click menu (WHY DO YALL DO FUFCKING `gmodinterface.oncontextmenu` WHAT ARE YOU SMOKING JUST USING RIGHTCLICK)
+- [x] right click menu
 - [ ] error bar at bottom of dhtml (dbutton)
-- [ ] write cs autocomplete to data (what?????? meta wtf)
+- [ ] cs autocomplete
 
 # Settings
 - [x] get current value of net_graph and highlight it on settings and clear all radios if any == 0
