@@ -17,7 +17,7 @@ if SERVER then
 		net.Send(plys)
 	end)
 	net.Receive( saytag, function(len,ply)
-		local txt = net.ReadString()
+		local txt = net.ReadString():gsub("\n","")
 		local team = net.ReadBool()
 		local msg = gamemode.Call( "PlayerSay", ply, txt, team )
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
