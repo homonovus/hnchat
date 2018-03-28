@@ -7,7 +7,7 @@ if SERVER then
 
 	net.Receive( localtag, function(len,ply)
 		local plys = net.ReadTable()
-		local txt = net.ReadString()
+		local txt = net.ReadString():gsub("\n","")
 		local msg = gamemode.Call( "PlayerSay", ply, txt, false )
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
 
