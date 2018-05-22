@@ -47,6 +47,9 @@
 - [x] give lua editor tabs (try to keep one dhtml)
 =======
 - [x] give lua editor tabs (try to keep one dhtml)      
+<<<<<<< HEAD
+>>>>>>> 2e76344385e93673b7c072a4e972aab2d666232a
+=======
 >>>>>>> 2e76344385e93673b7c072a4e972aab2d666232a
 - [ ] tab dragging
 - [ ] force cursor inside html when holding mouse inside dhtml (about 50% done)
