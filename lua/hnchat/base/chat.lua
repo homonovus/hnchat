@@ -7,7 +7,7 @@ if SERVER then
 
 	net.Receive( localtag, function(len,ply)
 		local plys = net.ReadTable()
-		local txt = net.ReadString()
+		local txt = net.ReadString():gsub("\n","")
 		local msg = gamemode.Call( "PlayerSay", ply, txt, false )
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
 
@@ -17,7 +17,7 @@ if SERVER then
 		net.Send(plys)
 	end)
 	net.Receive( saytag, function(len,ply)
-		local txt = net.ReadString()
+		local txt = net.ReadString():gsub("\n","")
 		local team = net.ReadBool()
 		local msg = gamemode.Call( "PlayerSay", ply, txt, team )
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
@@ -44,19 +44,35 @@ local hnchatbox_font_input = CreateClientConVar( "hnchatbox_font_input", "DermaD
 local hchat = vgui.Create("DPanel")
 
 oldSay = Say
-function Say( txt, team )
-	if util.NetworkStringToID(saytag) == 0 then
-		LocalPlayer():ConCommand( "say" .. (team and "_team" or "") .. " \"".. txt .. "\"" )
-		return
+function Say( ... )
+	local tab = {...}
+
+	local txt = ""
+	local team
+	if isbool(tab[#tab]) then
+		team = tab[#tab]
+		table.remove(tab, #tab)
 	end
+
+	for k, v in next, tab do
+		txt = txt..tostring(v).." "
+	end
+	txt = txt:Trim()
+
 	net.Start( saytag, false )
 		net.WriteString(txt)
 		net.WriteBool(team)
 	net.SendToServer()
 end
-function SayLocal(txt)
+function SayLocal(...)
 	local meme = { Color(255,0,0), "(Local @ " }
 	local sphere = ents.FindInSphere( LocalPlayer():GetPos(), 196 )
+	local txt = ""
+
+	for k, v in next, {...} do
+		txt = txt..tostring(v).." "
+	end
+	txt = txt:Trim()
 
 	net.Start( localtag, false )
 		local plys = {}
@@ -139,15 +155,15 @@ hchat.TextEntry.OnKeyCodeTyped = function( self, key )
 		self:AddHistory(str)
 		self:SetText("")
 		if str ~= "" then
-			if hchat.msgmode.curtype == 0 then
+			if hchat.msgmode.curtype == 1 then
 				Say( str, false )
-			elseif hchat.msgmode.curtype == 1 then
-				Say( str, true )
 			elseif hchat.msgmode.curtype == 2 then
-				SayLocal(str)
+				Say( str, true )
 			elseif hchat.msgmode.curtype == 3 then
-				RunConsoleCommand( "saysound", str )
+				SayLocal(str)
 			elseif hchat.msgmode.curtype == 4 then
+				RunConsoleCommand( "saysound", str )
+			elseif hchat.msgmode.curtype == 5 then
 				LocalPlayer():ConCommand(str)
 			else
 				Say( str, false )
@@ -165,9 +181,9 @@ hchat.TextEntry.OnKeyCodeTyped = function( self, key )
 	elseif key == KEY_TAB then
 		if self:GetText() == "" or not self:GetText() then
 			if input.IsControlDown() then
-				hchat.msgmode.curtype = hchat.msgmode.curtype > 0 and hchat.msgmode.curtype - 1 or #hchat.msgmode.types
+				hchat.msgmode.curtype = hchat.msgmode.curtype > 1 and hchat.msgmode.curtype - 1 or #hchat.msgmode.types
 			else
-				hchat.msgmode.curtype = hchat.msgmode.curtype < #hchat.msgmode.types and hchat.msgmode.curtype + 1 or 0
+				hchat.msgmode.curtype = hchat.msgmode.curtype < #hchat.msgmode.types and hchat.msgmode.curtype + 1 or 1
 			end
 		else
 			local tab = hook.Run( "OnChatTab", self:GetValue() )
@@ -176,77 +192,76 @@ hchat.TextEntry.OnKeyCodeTyped = function( self, key )
 				self:SetText(tab)
 			end
 		end
-		timer.Simple(0, function() self:RequestFocus() self:SetCaretPos( #self:GetText() ) end)
+		timer.Simple(0, function() self:RequestFocus() self:SetCaretPos( #self:GetText() ) self:RequestFocus() end)
 	end
 end
 hchat.msgmode = vgui.Create("DButton", hchat.message )
 hchat.msgmode:Dock(LEFT)
-hchat.msgmode.curtype = 0
+hchat.msgmode.curtype = 1
 hchat.msgmode.types = {
-		[0] = {
-			["name"] = "Say",
-			["icon"] = "icon16/world",
-			["size"] = {
-				["x"] = 31,
-				["y"] = 16
+		{
+			name = "Say",
+			icon = "icon16/world",
+			size = {
+				x = 31,
+				y = 16
 			}
 		},
-		[1] = {
-			["name"] = "Say (TEAM)",
-			["icon"] = "icon16/world_link",
-			["size"] = {
-				["x"] = 69,
-				["y"] = 16
+		{
+			name = "Say (TEAM)",
+			icon = "icon16/world_link",
+			size = {
+				x = 69,
+				y = 16
 			}
 		},
-		[2] = {
-			["name"] = "local chat",
-			["icon"] = "icon16/transmit_blue",
-			["size"] = {
-				["x"] = 58,
-				["y"] = 16
+		{
+			name = "local chat",
+			icon = "icon16/transmit_blue",
+			size = {
+				x = 58,
+				y = 16
 			}
 		},
-		[3] = {
-			["name"] = "Voice",
-			["icon"] = "icon16/phone_sound",
-			["size"] = {
-				["x"] = 38,
-				["y"] = 16
+		(chatsounds and {
+			name = "Voice",
+			icon = "icon16/phone_sound",
+			size = {
+				x = 38,
+				y = 16
+			}
+		} or nil),
+		{
+			name = "Console",
+			icon = "icon16/application_xp_terminal",
+			size = {
+				x = 51,
+				y = 16
 			}
 		},
-		[4] = {
-			["name"] = "Console",
-			["icon"] = "icon16/application_xp_terminal",
-			["size"] = {
-				["x"] = 51,
-				["y"] = 16
-			}
-		},
-		[5] = {
-			["name"] = "Language",
-			["icon"] = "icon16/font",
-			["size"] = {
-				["x"] = 60,
-				["y"] = 16
+		{
+			name = "Language",
+			icon = "icon16/font",
+			size = {
+				x = 60,
+				y = 16
 			}
 		}
 }
 hchat.msgmode.Think = function( self )
-	self:SetText( self.types[self.curtype].name )
-	self:SetSize( self.types[self.curtype].size.x, self.types[self.curtype].size.y)
+	local type = self.types[self.curtype]
+	self:SetText( type.name )
+	self:SetSize( type.size.x, type.size.y)
 end
 hchat.msgmode.DoClick = function( self )
-	self.curtype = self.curtype < 5 and self.curtype + 1 or 0
-	self:SetText( self.types[self.curtype].name )
-	self:SetSize( self.types[self.curtype].size.x, self.types[self.curtype].size.y)
+	self.curtype = self.curtype < #self.types and self.curtype + 1 or 1
 end
 hchat.msgmode.DoRightClick = function( self )
 	local menu = DermaMenu()
-	for i = 0, #self.types do
-		menu:AddOption( self.types[i].name, function()
-			self.curtype = i
-		end ):SetIcon( self.types[i].icon .. ".png")
+	for k, v in next, self.types do
+		menu:AddOption( v.name, function()
+			self.curtype = k
+		end ):SetIcon( v.icon .. ".png")
 	end
 	menu:Open()
 end
@@ -290,11 +305,11 @@ hnchat.AddText = function( self, ... )
 	end
 
 	for k, v in next, tab do
-		if IsColor(v) or istable(v) then
+		if IsColor(v) then
 			self:InsertColorChange(v.r, v.g, v.b, 255)
 		elseif type(v) == "string"  then
 			local words = string.Explode(" ",v)
-			if (v:find(LocalPlayer():Nick()) or v:find(LocalPlayer():UndecorateNick())) and hnchat_highlight:GetBool() then
+			if IsValid(LocalPlayer()) and (v:find(LocalPlayer():Nick()) or v:find(LocalPlayer():UndecorateNick())) and hnchat_highlight:GetBool() then
 				self:InsertColorChange( 255, 90, 35, 255 )
 			end
 
@@ -302,19 +317,29 @@ hnchat.AddText = function( self, ... )
 				self:InsertColorChange( 46, 231, 46, 255)
 			end
 
-			for k1, v1 in next, words do
-				if k1 > 1 then
-					self:AppendText(" ")
+			local mup = markup.Parse(v, 0)
+			local lastcol
+
+			-- my attempt at colors in richtext
+			--[[for k1,v1 in next, mup.blocks do
+				local col = Color(v1.colour.r,v1.colour.g,v1.colour.b,v1.colour.a or 255)
+
+				lastcol = col
+				self:InsertColorChange(col.r,col.g,col.b,col.a)
+
+				local words = string.Explode(" ", v1.text)]]
+
+				for k2, v2 in next, words do
+					if hnchat.IsURL(v2) then
+						local url = string.gsub(v2,"^%s:","")
+						self:InsertClickableTextStart(url)
+						self:AppendText(url)
+						self:InsertClickableTextEnd()
+					else
+						self:AppendText(v2.." ")
+					end
 				end
-				if hnchat.IsURL(v1) then
-					local url = string.gsub(v1,"^%s:","")
-					self:InsertClickableTextStart(url)
-					self:AppendText(url)
-					self:InsertClickableTextEnd()
-				else
-					self:AppendText(v1)
-				end
-			end
+			--end
 		elseif isentity(v) then
 			if v:IsPlayer() then
 				local col = GAMEMODE:GetTeamColor(v)
@@ -340,6 +365,7 @@ end
 oldChatAddText = oldChatAddText or chat.AddText
 function chat.AddText(...)
 	hnchat.AddText( hchat.RichText, ... )
+	if chathud and chat.AddText then chathud.AddText(...) end
 	oldChatAddText(...)
 end
 
@@ -368,7 +394,7 @@ hook.Add("ChatText", "hnchat", function(idx, name, text, type)
 end)
 hook.Add("FinishChat", "hnchat", function()
 	hchat.TextEntry:SetText("")
-	hchat.msgmode.curtype = 0
+	hchat.msgmode.curtype = 1
 	gamemode.Call( "ChatTextChanged", "" )
 end)
 concommand.Add( "hnchat_open",function() -- opens chat
@@ -377,11 +403,11 @@ concommand.Add( "hnchat_open",function() -- opens chat
 end)
 concommand.Add( "hnchat_open_local",function() -- opens chat in local
 	RunConsoleCommand("hnchat_open")
-	hchat.msgmode.curtype = 2
+	hchat.msgmode.curtype = 3
 end)
 concommand.Add( "hnchat_open_team",function() -- open chat in team
 	RunConsoleCommand("hnchat_open")
-	hchat.msgmode.curtype = 1
+	hchat.msgmode.curtype = 2
 end)
 
 return hnchat.derma.tabs:AddSheet( "Global", hchat, "icon16/comments.png", false, false, "Chat" )

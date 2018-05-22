@@ -200,7 +200,7 @@ local function SimpleFetch(url,cb,failcb)
 	http.Fetch(url,
 	function(data,len,headers,code)
 		if code~=200 then
-			Msg"[PAC] Url "print(string.format("failed loading %s (server returned %s)",url,tostring(code)))
+			Msg"[hnchat] URL "print(string.format("failed loading %s (server returned %s)",url,tostring(code)))
 			if failcb then
 				failcb(code,data,len,headers)
 			end
@@ -209,7 +209,7 @@ local function SimpleFetch(url,cb,failcb)
 		cb(data,len,headers)
 	end,
 	function(err)
-		Msg"[PAC] Url "print(string.format("failed loading %s (%s)",url,tostring(err)))
+		Msg"[hnchat] URL "print(string.format("failed loading %s (%s)",url,tostring(err)))
 		if failcb then
 			failcb(err)
 		end

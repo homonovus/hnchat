@@ -21,6 +21,9 @@ end
 
 if not hnchat then return end
 
+-- because i'm retarded
+local dmstuff = vgui.Create("DPanel")
+
 local hnchat_pm_disable = CreateClientConVar( "hnchat_pm_disable", 0 )
 local hnchat_pm_friendsonly = CreateClientConVar( "hnchat_pm_friendsonly", 0 )
 local hnchat_pmmode = CreateClientConVar( "hnchat_pmmode", 0 )
@@ -179,7 +182,6 @@ cvars.AddChangeCallback( "hnchatbox_font_input", function( cmd, old, new)
 	return
 end)
 
-dmstuff = vgui.Create("DPanel")
 dmstuff.Paint = function() return false end
 --dmstuff.unread = 0
 dmstuff.tabs = vgui.Create( "DPropertySheet", dmstuff )

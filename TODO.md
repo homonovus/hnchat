@@ -15,6 +15,7 @@
 - [ ] scale textentry's with font's size
 - [ ] make textentry's bigger with more lines
 - [ ] use easylua funcs in place of my own lol
+- [x] chathud
 
 # Global Chat
 - [ ] add in emoji picker, etc
@@ -42,12 +43,21 @@
 - [ ] functionality for the buttons lol (almost done)
 - [ ] fix buttons' icons
 - [x] auto raw from haste/pastebin
+<<<<<<< HEAD
+- [x] give lua editor tabs (try to keep one dhtml)
+=======
 - [x] give lua editor tabs (try to keep one dhtml)      
-- [ ] tab dragging      
+>>>>>>> 2e76344385e93673b7c072a4e972aab2d666232a
+- [ ] tab dragging
+- [ ] force cursor inside html when holding mouse inside dhtml (about 50% done)
+- [ ] fix tab rendering when switching tabs
+- [x] right click menu
+- [ ] error bar at bottom of dhtml (dbutton)
+- [ ] cs autocomplete
 
 # Settings
 - [x] get current value of net_graph and highlight it on settings and clear all radios if any == 0
 - [x] remove small gap between settings groups
 - [x] add settings for PMs (you know the ones)
 - [ ] copy all of meta's settings lol
-- [ ] fix font selector tab not auto sizing parent
+- [x] fix font selector tab not auto sizing parent
