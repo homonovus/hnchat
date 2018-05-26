@@ -131,7 +131,11 @@ hchat.TextEntry:Dock(FILL)
 hchat.TextEntry:SetMultiline(true)
 hchat.TextEntry.OldThink = hchat.TextEntry.Think
 hchat.TextEntry.Think = function(self)
-	gamemode.Call( "ChatTextChanged", self:GetValue() )
+	if self.reqfocus then
+		self:RequestFocus()
+		self.reqfocus = false
+	end
+	gamemode.Call( "ChatTextChanged", self:GetText() )
 	self.OldThink(self)
 end
 cvars.AddChangeCallback( "hnchatbox_font_input", function( cmd, old, new)
@@ -150,7 +154,7 @@ hchat.TextEntry.Paint = function( self, w ,h )
 end
 hchat.TextEntry.OnKeyCodeTyped = function( self, key )
 	if key == KEY_ENTER then
-		local str = self:GetValue():Trim()
+		local str = self:GetText():Trim()
 
 		self:AddHistory(str)
 		self:SetText("")
@@ -172,13 +176,17 @@ hchat.TextEntry.OnKeyCodeTyped = function( self, key )
 
 		self.HistoryPos = 0
 		hnchat.closeChatbox()
-	elseif key == KEY_UP then
+	end
+	if key == KEY_UP then
 		self.HistoryPos = self.HistoryPos - 1
 		self:UpdateFromHistory()
-	elseif key == KEY_DOWN then
+	end
+	if key == KEY_DOWN then
 		self.HistoryPos = self.HistoryPos + 1
 		self:UpdateFromHistory()
-	elseif key == KEY_TAB then
+	end
+	if key == KEY_TAB then
+		self.reqfocus = true
 		if self:GetText() == "" or not self:GetText() then
 			if input.IsControlDown() then
 				hchat.msgmode.curtype = hchat.msgmode.curtype > 1 and hchat.msgmode.curtype - 1 or #hchat.msgmode.types
@@ -186,13 +194,13 @@ hchat.TextEntry.OnKeyCodeTyped = function( self, key )
 				hchat.msgmode.curtype = hchat.msgmode.curtype < #hchat.msgmode.types and hchat.msgmode.curtype + 1 or 1
 			end
 		else
-			local tab = hook.Run( "OnChatTab", self:GetValue() )
+			local tab = hook.Run( "OnChatTab", self:GetText() )
 
-			if tab and isstring(tab) and tab ~= self:GetValue() then
+			if tab and isstring(tab) and tab ~= self:GetText() then
 				self:SetText(tab)
 			end
 		end
-		timer.Simple(0, function() self:RequestFocus() self:SetCaretPos( #self:GetText() ) self:RequestFocus() end)
+		self:SetCaretPos(#self:GetText())
 	end
 end
 hchat.msgmode = vgui.Create("DButton", hchat.message )
@@ -223,14 +231,6 @@ hchat.msgmode.types = {
 				y = 16
 			}
 		},
-		(chatsounds and {
-			name = "Voice",
-			icon = "icon16/phone_sound",
-			size = {
-				x = 38,
-				y = 16
-			}
-		} or nil),
 		{
 			name = "Console",
 			icon = "icon16/application_xp_terminal",
@@ -248,22 +248,36 @@ hchat.msgmode.types = {
 			}
 		}
 }
+
+if concommand.GetTable().saysound then
+	table.insert(hchat.msgmode.types,4,{
+		name = "Voice",
+		icon = "icon16/phone_sound",
+		size = {
+			x = 38,
+			y = 16
+		}
+	})
+end
+
 hchat.msgmode.Think = function( self )
 	local type = self.types[self.curtype]
 	self:SetText( type.name )
 	self:SetSize( type.size.x, type.size.y)
 end
-hchat.msgmode.DoClick = function( self )
-	self.curtype = self.curtype < #self.types and self.curtype + 1 or 1
-end
-hchat.msgmode.DoRightClick = function( self )
-	local menu = DermaMenu()
-	for k, v in next, self.types do
-		menu:AddOption( v.name, function()
-			self.curtype = k
-		end ):SetIcon( v.icon .. ".png")
+hchat.msgmode.OnMousePressed = function ( self, mc )
+	if mc == MOUSE_LEFT then
+		self.curtype = self.curtype < #self.types and self.curtype + 1 or 1
+	else
+		local menu = DermaMenu()
+		for k, v in next, self.types do
+			menu:AddOption( v.name, function()
+				self.curtype = k
+			end ):SetIcon( v.icon .. ".png")
+		end
+		menu:Open()
 	end
-	menu:Open()
+	hchat.TextEntry:RequestFocus()
 end
 
 local function extrashit( self )

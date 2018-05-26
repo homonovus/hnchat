@@ -12,14 +12,7 @@ local hnchatbox_history_font = CreateClientConVar( "hnchatbox_history_font", "De
 local hnchatbox_font_input = CreateClientConVar( "hnchatbox_font_input", "DermaDefault" )
 
 function hnchat.tofull()
-	hnchat.derma.Frame:SetCookie("full",1)
-	local x, y = hnchat.derma.Frame:GetPos()
-	local w, h = hnchat.derma.Frame:GetSize()
-	hnchat.derma.Frame:SetCookie("x",x)
-	hnchat.derma.Frame:SetCookie("y",y)
-	hnchat.derma.Frame:SetCookie("w",w)
-	hnchat.derma.Frame:SetCookie("h",h)
-
+	hnchat.derma.Frame._maxed = true
 	hnchat.derma.Frame:SetSize(ScrW(), ScrH())
 	hnchat.derma.Frame:SetPos(0,0)
 	hnchat.derma.Frame:SetDraggable(false)
@@ -27,12 +20,12 @@ function hnchat.tofull()
 	hnchat.derma.Frame.FSButton.DoClick = hnchat.towin
 end
 function hnchat.towin()
-	hnchat.derma.Frame:SetCookie("full",0)
 	local x = hnchat.derma.Frame:GetCookie("x",x)
 	local y = hnchat.derma.Frame:GetCookie("y",y)
 	local w = hnchat.derma.Frame:GetCookie("w",w)
 	local h = hnchat.derma.Frame:GetCookie("h",h)
 
+	hnchat.derma.Frame._maxed = false
 	hnchat.derma.Frame:SetDraggable(true)
 	hnchat.derma.Frame:SetPos(x,y)
 	hnchat.derma.Frame:SetSize(w,h)
@@ -100,6 +93,13 @@ hnchat.derma = hnchat.derma or {}
 			gui.HideGameUI()
 			hnchat.closeChatbox()
 		end
+		if not self._maxed then
+			local w,h = self:GetSize()
+			self:SetCookie("x", self.x)
+			self:SetCookie("y", self.y)
+			self:SetCookie("w", w)
+			self:SetCookie("h", h)
+		end
 		hnchat.derma.Frame.oldThink(self)
 	end
 	hnchat.derma.Frame.OnKeyCodePressed = function( self, key )
@@ -112,6 +112,8 @@ hnchat.derma = hnchat.derma or {}
 	local y = hnchat.derma.Frame:GetCookie("y", ScrH() - math.min(650, ScrH() - 350))
 	local w = hnchat.derma.Frame:GetCookie("w", 600)
 	local h = hnchat.derma.Frame:GetCookie("h", 350)
+	x, y = tonumber(x), tonumber(y) -- why are they strings
+	w, h = tonumber(w), tonumber(h)
 	hnchat.derma.Frame:SetPos(x,y)
 	hnchat.derma.Frame:SetSize(w,h)
 
