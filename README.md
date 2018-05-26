@@ -1,4 +1,6 @@
 # hnchat
+Chatbox based off of the design of Meta Construct's. Mostly original code, all unoriginal ideas
+
 The original design of the chatbox is not by me; it's mirrored from Metastruct's chatbox. I personally enjoyed the design of it, and tried to mimic it in my own way.
 
 **This chatbox is not finished**; not yet, atleast
@@ -8,3 +10,4 @@ The original design of the chatbox is not by me; it's mirrored from Metastruct's
 * Local chat: Talk with players in an area of 256 in-game units.
 * DM system: Send private messages to players in the game.
 * Chatsounds support
+* Chat HUD: you can have colors in chat now
